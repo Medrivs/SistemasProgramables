@@ -1,7 +1,8 @@
 # Proyecto: SafeDrop
 # Archivo: rele_mqtt.py
 # Objetivo: Prueba del canal 1 de un modulo rele de 5V via MQTT, sin carga.
-# Equipo: 09 (completar nombres y matriculas en encabezado final)
+# Equipo: 09 Alan Medina Rivas 23240436
+# Victor Hugo Ojeda Cabrera 23240390
 # Materia: Sistemas Programables - ISC TecNM Leon
 # Semestre: ago-dic-2026
 
