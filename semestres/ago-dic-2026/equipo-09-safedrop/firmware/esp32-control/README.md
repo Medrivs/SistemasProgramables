@@ -13,6 +13,33 @@ Este directorio documenta las pruebas progresivas del ESP32 estandar
 con MicroPython y Mosquitto. Son programas individuales de prueba,
 no todavia el firmware integrado del buzon.
 
+## Firmware integrado de laboratorio
+
+[`safedrop_integrado.py`](safedrop_integrado.py) reúne en **un solo proceso**
+los sensores PIR (GPIO27), LDR (GPIO34) y HC-SR04 (TRIG GPIO18 /
+ECHO GPIO19 con divisor de tensión). Publica en los mismos tópicos MQTT
+de las pruebas individuales y añade:
+
+- `safedrop/estado/led`: el LED GPIO21 simula la iluminación si hay movimiento
+  y oscuridad; inicia con umbrales ADC 3000 (oscuro) / 2500 (claro).
+- `safedrop/eventos/objeto`: detecta la aproximación de un objeto con
+  el ultrasónico y activa un pitido breve en el buzzer GPIO25.
+  Umbrales preliminares: cerca <= 15 cm, zona libre >= 20 cm,
+  dos lecturas consecutivas. **No prueba la validación de un paquete**.
+
+**Integración recién implementada en código; ejecutar prueba conjunta
+con el cableado completo antes de considerarla validada.**
+El relé, el foco de corriente doméstica y el SG90 permanecen fuera de este
+programa. No lo guardar como `main.py` por ahora. Un `config.py` privado
+con SSID, contraseña e IP del broker debe estar en la ESP32.
+
+```cmd
+"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t "safedrop/#" -v
+```
+
+El buzzer debe ser compatible en tensión **y corriente** con el GPIO o
+accionarse por transistor. No conectar ECHO 5 V directamente a la ESP32.
+
 ## Avances comprobados
 
 | Modulo | Prueba realizada | Resultado |
