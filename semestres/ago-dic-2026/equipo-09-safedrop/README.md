@@ -48,7 +48,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | `safedrop/rele/cmd` | Broker → ESP32 | Activar/desactivar relé | Probado |
 | `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
 | `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
-| `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 | Propuesto |
+| `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 en cm | Probado |
 | `safedrop/puerta/cmd` | Broker → ESP32 | Control SG90 | Propuesto |
 | `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer | Propuesto |
 | `safedrop/cam/frame` | Cámara → Broker | Fotograma de cámara | Propuesto; hoy se usa TCP |
@@ -61,7 +61,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | 2 | ESP32-S3 + OV3660 | Cámara / MCU | 1 | Disponible / costo no registrado |
 | 3 | PIR HC-SR501 | Sensor | 1 | Probado |
 | 4 | LDR LM393 | Sensor | 1 | Probado |
-| 5 | HC-SR04 | Sensor | 1 | Disponible; pendiente de prueba |
+| 5 | HC-SR04 | Sensor | 1 | Distancia y publicación MQTT probadas |
 | 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado |
 | 7 | Servomotor SG90 | Actuador | 1 | Disponible; pendiente |
 | 8 | Buzzer y LED | Actuadores | 1 de cada uno | LED probado; buzzer pendiente |
@@ -92,6 +92,7 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 - `rele_mqtt.py`: comandos ON/OFF para GPIO26.
 - `pir_mqtt.py`: eventos 0/1 en GPIO27.
 - `ldr_mqtt.py`: nivel analógico por GPIO34 (ADC1).
+- `ultrasonico_mqtt.py`: distancia HC-SR04 en cm; TRIG GPIO18, ECHO GPIO19 con divisor de tensión.
 - `config.example.py`: plantilla para la configuración privada.
 
 ### Visión ESP32-S3
@@ -163,7 +164,7 @@ conexiones verificadas y pines/tópicos propuestos sin confundirlos.
 |---|---|---|---|
 | PIR | 27 | `safedrop/sensores/pir` | Probado |
 | LDR (AO) | 34 | `safedrop/sensores/ldr` | Probado |
-| HC-SR04 | 18 / 19 (propuesto) | `safedrop/sensores/distancia` | Pendiente |
+| HC-SR04 | 18 / 19 (ECHO con divisor) | `safedrop/sensores/distancia` | Probado |
 | Relé | 26 | `safedrop/rele/cmd` | Probado |
 | SG90 | 23 (propuesto) | `safedrop/puerta/cmd` | Pendiente |
 | Buzzer | 25 (propuesto) | `safedrop/buzzer/cmd` | Pendiente |
@@ -198,7 +199,7 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 | Sprint | Avances confirmados | Pendiente principal |
 |---|---|---|
-| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, PIR y LDR MQTT, Tabla HAL | Tercer sensor y tres actuadores integrados; evidencias y esquemático |
+| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | SG90 y buzzer MQTT, integración, evidencias y esquemático |
 | 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Publicar decisión por MQTT, controlar SG90 e IA exigida por la materia |
 | 3 — Firebase y carcasa | Arquitectura planeada | Firebase, dashboard, prototipo en carcasa |
 | 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
@@ -213,7 +214,8 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
    y mantener las credenciales fuera de GitHub.
 4. La señal del LDR es inversa a la iluminación (valores altos = menos luz);
    necesita calibración para accionar la iluminación.
-5. No se ha conectado el foco de 120 V; solo se aceptará una instalación
+5. El HC-SR04 alimentado a 5 V necesita adaptar ECHO a 3.3 V o menos antes de conectarlo al GPIO19.
+6. No se ha conectado el foco de 120 V; solo se aceptará una instalación
    protegida y revisada.
 
 ---
