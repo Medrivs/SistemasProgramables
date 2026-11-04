@@ -10,23 +10,27 @@ como probados los dispositivos que aún no se han conectado y comprobado.
 ## Integración de firmware
 
 Se agregó `firmware/esp32-control/safedrop_integrado.py` para ejecutar
-PIR, LDR y HC-SR04 al mismo tiempo, y simular la iluminación con LED,
-además de un aviso breve mediante buzzer cuando la distancia cambia
-de zona libre a zona ocupada. Este archivo aún requiere prueba conjunta.
+PIR, LDR y HC-SR04 al mismo tiempo. En modo AUTO, el PIR y la oscuridad
+controlan **relé GPIO26 + LED GPIO21**; HC-SR04 detecta proximidad y
+el buzzer GPIO25 emite un aviso breve. El relé también admite comandos
+MQTT ON, OFF y AUTO. Este archivo aún requiere prueba conjunta.
 
 | Componente | Operación integrada | Estado |
 |---|---|---|
 | PIR GPIO27 | Telemetría MQTT y movimiento para LED | Implementado, integración por probar |
 | LDR GPIO34 | Telemetría MQTT y oscuridad para LED | Implementado, calibración pendiente |
 | HC-SR04 GPIO18/19 | Telemetría MQTT, detector de proximidad para buzzer | Implementado, umbral por calibrar |
-| LED GPIO21 | Simula foco sin usar relé de 120 V | Implementado, integración por probar |
-| Buzzer GPIO25 | Pitido de 250 ms ante objeto nuevo | Implementado, integración por probar |
-| Relé GPIO26 / foco | No controlados en firmware integrado | Pendientes |
-| SG90 GPIO23 | No controlado en firmware integrado | Pendiente de integración |
+| Relé GPIO26 | Activación automática con PIR + oscuridad, o MQTT ON/OFF/AUTO; contactos sin foco | Implementado, integración por probar |
+| LED GPIO21 | Indicador en paralelo con la lógica del relé | Implementado, integración por probar |
+| Buzzer GPIO25 | Pitido de 250 ms ante objeto nuevo o comando MQTT ON | Implementado, integración por probar |
+| Foco 120 V | **No conectado** al relé | Pendiente de instalación eléctrica protegida |
+| SG90 GPIO23 | No controlado en este firmware | Pendiente de integración |
 
-**Tópicos adicionales:** `safedrop/estado/led` y
-`safedrop/eventos/objeto`. El evento indica proximidad, **no una entrega
-autorizada o confirmada**. Todos los umbrales son valores iniciales de mesa.
+**Tópicos adicionales:** `safedrop/estado/rele`, `safedrop/estado/led`
+y `safedrop/eventos/objeto`. El tópico `safedrop/rele/cmd` recibe ON,
+OFF o AUTO; `safedrop/buzzer/cmd` recibe ON/OFF. El evento indica
+proximidad, **no una entrega autorizada o confirmada**. Todos los umbrales
+son valores iniciales de mesa.
 
 ## Tabla de componentes y comunicación
 
@@ -77,7 +81,9 @@ autorizada o confirmada**. Todos los umbrales son valores iniciales de mesa.
 - [x] LDR publicando lectura
 - [x] Tercer sensor HC-SR04 publicando lectura
 - [x] LED de prueba respondiendo a MQTT
-- [x] Relé respondiendo a MQTT
+- [x] Relé respondiendo a MQTT en la prueba individual
+- [x] Relé agregado al firmware integrado (sin foco)
+- [ ] Comprobar funcionamiento conjunto PIR + LDR + relé en modo AUTO
 - [x] Movimiento físico del servomotor SG90
 - [x] Firmware `servo_mqtt.py` agregado
 - [ ] Respuesta del SG90 a comandos MQTT verificada en la placa
