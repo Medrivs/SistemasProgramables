@@ -25,6 +25,7 @@ no todavia el firmware integrado del buzon.
 | PIR + MQTT | Publicar cambios de movimiento | Publicaciones 1/0 reportadas desde Thonny |
 | LDR LM393 (cuatro pines) | Leer iluminacion por AO en GPIO34 | Lecturas 0-4095 cambiantes |
 | LDR + MQTT | Enviar lectura de luz al broker | Valores recibidos en CMD, confirmado por el equipo |
+| HC-SR04 + MQTT | Medir distancia (GPIO18 TRIG / GPIO19 ECHO) | Distancias recibidas en CMD, confirmado por el equipo |
 
 ### Observaciones del LDR
 
@@ -42,6 +43,7 @@ se determinara al integrar los sensores.
 | `rele_mqtt.py` | 26 | `safedrop/rele/cmd` | ON/OFF (comprobar polaridad del rele) |
 | `pir_mqtt.py` | 27 | `safedrop/sensores/pir` | Publica 1 (movimiento) / 0 |
 | `ldr_mqtt.py` | 34 (ADC1) | `safedrop/sensores/ldr` | Publica valor ADC cada 2 segundos |
+| `ultrasonico_mqtt.py` | 18 TRIG / 19 ECHO | `safedrop/sensores/distancia` | Publica distancia en cm cada 2 segundos |
 | `config.example.py` | - | - | Plantilla Wi-Fi/IP del broker |
 
 ### Conexiones de sensores ya probadas
@@ -52,6 +54,10 @@ GND a GND, OUT a GPIO27. Verificar que OUT no exceda
 
 **LDR con LM393:** VCC a 3V3, GND a GND, AO a GPIO34
 y DO sin conectar.
+
+**HC-SR04:** VCC a 5 V, GND común, TRIG a GPIO18, ECHO a GPIO19
+por **divisor de tensión** que reduzca la salida de 5 V a un máximo de
+3.3 V. Lectura y publicación MQTT probadas.
 
 ## Ejecutar pruebas
 
@@ -89,6 +95,12 @@ Suscripciones individuales:
 "C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t safedrop/sensores/ldr -v
 ```
 
+Suscripcion especifica del sensor de distancia:
+
+```cmd
+"C:\\Program Files\\mosquitto\\mosquitto_sub.exe" -h localhost -t safedrop/sensores/distancia -v
+```
+
 ## Seguridad del rele y foco
 
 - El rele se ha probado por MQTT; **el foco de 120 V aun no esta
@@ -105,7 +117,7 @@ Suscripciones individuales:
 
 - Integrar PIR + LDR + rele para iluminacion automatica;
   probar la logica sin carga de red domestica.
-- Probar HC-SR04, buzzer y servomotor SG90.
+- Probar buzzer y servomotor SG90; ya publican por MQTT PIR, LDR y HC-SR04.
 - Integrar autorizacion QR desde Python y comandos MQTT al servo.
 - Implementar reconexion y estado seguro ante perdida de conexion.
 - Firebase, dashboard, carcasa, esquematicos y reporte final.
