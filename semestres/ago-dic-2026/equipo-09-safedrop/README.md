@@ -1,19 +1,221 @@
-# SafeDrop — Buzon inteligente 
+# SafeDrop — Buzón inteligente
 
-¿Cómo funcionará exactamente?
-El sistema opera en una arquitectura IoT distribuida. El trabajo pesado de Inteligencia Artificial se hace en tu computadora (Servidor), mientras que el buzón solo interactúa con el mundo físico y envía datos.
+![Estado](https://img.shields.io/badge/estado-en--desarrollo-yellow)
+![Semestre](https://img.shields.io/badge/semestre-ago--dic--2026-blue)
+![Materia](https://img.shields.io/badge/materia-Sistemas%20Programables-orange)
 
-Paso 1: Detección y Adaptación al Entorno (Hardware)El buzón está colgado en la puerta y el ESP32 está en modo de espera. Cuando un repartidor se acerca, el Sensor PIR detecta su movimiento. Simultáneamente, el Sensor LDR evalúa la luz del ambiente. Si la luz es escasa (es de noche), el ESP32 manda una señal al Relevador para que cierre el circuito y encienda el Foco LED, iluminando perfectamente la zona de entrega.
+> **Semestre:** ago-dic-2026  
+> **Materia:** Sistemas Programables — ISC TecNM León  
+> **Equipo:** 09  
+> **Entrega:** proyecto en desarrollo; este repositorio documenta avances y pruebas, no una entrega final.
 
-Paso 2: Captura Visual y Procesamiento IA (ESP32-CAM + Servidor PC)
-Al detectar movimiento, la ESP32-CAM toma una fotografía del código QR del paquete (o inicia una transmisión de video) y la envía por red WiFi a tu computadora. En tu laptop estará corriendo un script de Python (usando la biblioteca OpenCV y pyzbar). Esta IA decodificará el código QR.   
+## Integrantes
 
-Paso 3: Autorización y Desbloqueo (MQTT + Actuadores)
-Si el script de Python detecta que el QR pertenece a una entrega válida, la PC publica un mensaje a través del broker MQTT (por ejemplo, enviando la palabra "abrir" al tópico safedrop/puerta). El ESP32 físico, que está suscrito a ese tópico, recibe el mensaje y gira el Servomotor, retirando el seguro mecánico de la escotilla de cartón.   
+| Nombre | Matrícula | Responsabilidades | GitHub |
+|---|---|---|---|
+| Alan Medina Rivas | 23240436 | Distribución formal de roles por confirmar | [@Medrivs](https://github.com/Medrivs) |
+| Victor Hugo Ojeda Cabrera | 23240390 | Distribución formal de roles por confirmar | Pendiente de registrar |
 
-Paso 4: Caída Antirrobo y Confirmación de Paquete (Sensores)El repartidor abre la escotilla y deposita el paquete. El objeto resbala por la rampa de cartón (diseño que impide meter la mano desde afuera para robar). Mientras el paquete va cayendo, interrumpe la señal del Sensor Ultrasónico HC-SR04. El ESP32 detecta esta interrupción y programa el Servomotor para que cierre la escotilla nuevamente después de 5 segundos.
+## 📌 Descripción general
 
-Paso 5: Medición Innovadora y Notificación (Innovación + Firebase)El paquete aterriza en el fondo del buzón sobre el acrílico. La Celda de Carga (HX711) mide su masa y calcula que el paquete pesa, por ejemplo, 450 gramos. Al registrar el peso final estable, el ESP32 hace sonar el Buzzer (un pitido de confirmación para que el repartidor sepa que todo salió bien).
+SafeDrop es un buzón inteligente diseñado para facilitar la recepción de
+paquetes en ausencia del destinatario y reducir el riesgo de extracción no
+autorizada. Utiliza sensores y actuadores conectados a un ESP32 de control,
+una segunda ESP32-S3 con cámara y un servidor Python para procesar imágenes
+y validar entregas. Se planea registrar eventos en Firebase y visualizarlos
+en un dashboard.
 
-Paso 6: Registro Histórico y Dashboard (Nube)
-Finalmente, el ESP32 envía una carga útil (payload) a la base de datos en Firebase.
+**Importante:** la lectura de códigos QR con OpenCV y `pyzbar` ya se probó;
+es visión computacional tradicional y no equivale a un modelo de IA
+entrenado. El componente de IA requerido por el curso sigue por definir
+e integrar.
+
+## 🏗️ Arquitectura del sistema
+
+![Arquitectura del prototipo SafeDrop](hardware/arquitectura.svg)
+
+**Implementado:** ESP32-S3 OV3660 → Wi-Fi/TCP → Python/OpenCV/pyzbar,
+y ESP32 de control ↔ MQTT/Mosquitto para sensores y actuadores de prueba.
+
+**Planeado:** decisiones de validación QR → MQTT → SG90, integración de
+cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
+
+### Tópicos MQTT
+
+| Tópico | Dirección | Función | Estado |
+|---|---|---|---|
+| `safedrop/led/cmd` | Broker → ESP32 | Encender/apagar LED | Probado |
+| `safedrop/rele/cmd` | Broker → ESP32 | Activar/desactivar relé | Probado |
+| `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
+| `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
+| `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 | Propuesto |
+| `safedrop/puerta/cmd` | Broker → ESP32 | Control SG90 | Propuesto |
+| `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer | Propuesto |
+| `safedrop/cam/frame` | Cámara → Broker | Fotograma de cámara | Propuesto; hoy se usa TCP |
+
+## 🛠️ Hardware
+
+| # | Componente | Tipo | Cantidad | Estado / costo MXN |
+|---|---|---|---|---|
+| 1 | ESP32 estándar | Microcontrolador | 1 | Disponible / costo no registrado |
+| 2 | ESP32-S3 + OV3660 | Cámara / MCU | 1 | Disponible / costo no registrado |
+| 3 | PIR HC-SR501 | Sensor | 1 | Probado |
+| 4 | LDR LM393 | Sensor | 1 | Probado |
+| 5 | HC-SR04 | Sensor | 1 | Disponible; pendiente de prueba |
+| 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado |
+| 7 | Servomotor SG90 | Actuador | 1 | Disponible; pendiente |
+| 8 | Buzzer y LED | Actuadores | 1 de cada uno | LED probado; buzzer pendiente |
+| 9 | Celda de carga + HX711 | Sensor no convencional | 1 | Pendiente de conseguir |
+| 10 | Protoboard y cables | Montaje prototipo | Varios | Disponibles |
+| 11 | Foco 120 V | Iluminación | 1 | Sin conectar; instalación protegida pendiente |
+
+**Costo total real:** pendiente de registrar, sin estimaciones inventadas.
+
+### Diagrama de conexiones y Tabla HAL
+
+- [Tabla HAL del hardware, pines, unidades y tópicos](hardware/tabla_hal.md)
+- **Esquemático detallado del circuito** (Fritzing o equivalente): pendiente
+  de realizar y subir como imagen.
+- **Fotografías de pruebas y carcasa:** pendientes de incorporar a `media/`.
+
+Las conexiones marcadas como *propuestas* no se han validado.
+La parte de 120 V requiere instalación protegida y revisión de personal
+calificado; no debe cablearse en protoboard.
+
+## 💻 Software y firmware
+
+### Firmware ESP32 de control
+
+Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
+
+- `led_mqtt.py`: comandos ON/OFF para GPIO21.
+- `rele_mqtt.py`: comandos ON/OFF para GPIO26.
+- `pir_mqtt.py`: eventos 0/1 en GPIO27.
+- `ldr_mqtt.py`: nivel analógico por GPIO34 (ADC1).
+- `config.example.py`: plantilla para la configuración privada.
+
+### Visión ESP32-S3
+
+[`firmware/esp32s3-vision/main.py`](firmware/esp32s3-vision/main.py):
+captura RGB565 a 160×120 y envía cabecera + imagen por TCP al servidor
+Python, puerto 5000. La configuración real va en `config.py`, ignorado
+por Git. La configuración separada aún requiere una prueba completa sobre
+la placa en su versión publicada.
+
+### Servidor Python
+
+[`servidor/main.py`](servidor/main.py): recibe la imagen, la convierte
+con NumPy/OpenCV y utiliza `pyzbar` para leer QR. El reconocimiento
+de QR y la recepción de imágenes ya se demostraron en pruebas.
+
+Requisitos actuales: [`servidor/requirements.txt`](servidor/requirements.txt).
+
+```cmd
+cd semestres\ago-dic-2026\equipo-09-safedrop\servidor
+python -m pip install -r requirements.txt
+python main.py
+```
+
+### Ejecutar las pruebas MQTT
+
+1. Instalar y configurar Mosquitto en la PC. Broker de pruebas: puerto 1883.
+2. Crear un `config.py` a partir del `config.example.py` del firmware
+   elegido y establecer SSID, contraseña e IP local del broker.
+   **No subir contraseñas ni credenciales a GitHub.**
+3. En Thonny ejecutar manualmente **un** script del ESP32 de control.
+4. Abrir un CMD con el suscriptor MQTT:
+
+```cmd
+"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t "safedrop/#" -v
+```
+
+5. Para enviar una orden de prueba al relé **sin carga conectada**:
+
+```cmd
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m ON
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m OFF
+```
+
+### Librerías
+
+**ESP32:** `network`, `machine`, `time`, `umqtt.simple`; firmware
+especial con soporte `camera` para ESP32-S3.
+
+**PC:** `opencv-python`, `numpy`, `pyzbar`; Mosquitto como broker.
+La integración `paho-mqtt` y `firebase-admin` se evaluará al implementar
+el puente MQTT y Firestore; no forman parte aún del servidor publicado.
+
+## 🧠 Inteligencia artificial y visión
+
+- **Técnica probada:** OpenCV + lectura de códigos QR con `pyzbar`.
+- **Entrada probada:** fotograma RGB565 a 160×120 desde OV3660.
+- **Decisión futura:** comprobar QR válido, vigencia y uso previo antes
+  de publicar una autorización de apertura.
+- **Modelo IA, confianza mínima y evaluación:** pendientes de definir y
+  desarrollar conforme a los requisitos del curso.
+
+## 📋 HAL — Hardware Abstraction Layer
+
+La [tabla HAL completa de avance](hardware/tabla_hal.md) documenta
+conexiones verificadas y pines/tópicos propuestos sin confundirlos.
+
+| Componente | GPIO | MQTT | Estado |
+|---|---|---|---|
+| PIR | 27 | `safedrop/sensores/pir` | Probado |
+| LDR (AO) | 34 | `safedrop/sensores/ldr` | Probado |
+| HC-SR04 | 18 / 19 (propuesto) | `safedrop/sensores/distancia` | Pendiente |
+| Relé | 26 | `safedrop/rele/cmd` | Probado |
+| SG90 | 23 (propuesto) | `safedrop/puerta/cmd` | Pendiente |
+| Buzzer | 25 (propuesto) | `safedrop/buzzer/cmd` | Pendiente |
+
+## 🔥 Esquema Firebase (previsto, no implementado)
+
+```text
+/safedrop/
+  /lecturas/{timestamp}/
+    pir: 0 o 1
+    ldr: valor_adc
+    distancia_cm: valor
+  /eventos_ia/{timestamp}/
+    qr_validado: true/false
+    accion: "abrir" o "rechazar"
+  /estado_actual/
+    puerta: "cerrada"
+    iluminacion: "OFF"
+```
+
+El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
+
+## 🎥 Demostración y evidencias
+
+- **Video de YouTube:** pendiente de grabar y publicar.
+- **Fotos del prototipo final:** pendientes.
+- **Capturas de OpenCV y mensajes MQTT:** disponibles en pruebas, pendientes
+  de incorporarse a la carpeta `media/`.
+- **Reporte final PDF:** pendiente de integrar en `docs/`.
+
+## ✅ Avances y pendientes según sprints
+
+| Sprint | Avances confirmados | Pendiente principal |
+|---|---|---|
+| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, PIR y LDR MQTT, Tabla HAL | Tercer sensor y tres actuadores integrados; evidencias y esquemático |
+| 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Publicar decisión por MQTT, controlar SG90 e IA exigida por la materia |
+| 3 — Firebase y carcasa | Arquitectura planeada | Firebase, dashboard, prototipo en carcasa |
+| 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
+
+## ⚠️ Retos técnicos encontrados
+
+1. La OV3660 funciona en RGB565 a 160×120; resoluciones superiores
+   presentaron problemas de captura y desbordamiento de búfer.
+2. La cámara envía actualmente bytes RAW vía TCP; el requisito de frames
+   por MQTT sigue pendiente.
+3. Se requirió configurar Mosquitto para aceptar la comunicación ESP32/PC
+   y mantener las credenciales fuera de GitHub.
+4. La señal del LDR es inversa a la iluminación (valores altos = menos luz);
+   necesita calibración para accionar la iluminación.
+5. No se ha conectado el foco de 120 V; solo se aceptará una instalación
+   protegida y revisada.
+
+---
+
+*Sistemas Programables · ISC TecNM León · ago-dic-2026 · Equipo 09*
