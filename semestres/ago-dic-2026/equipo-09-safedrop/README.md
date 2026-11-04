@@ -45,12 +45,15 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | Tópico | Dirección | Función | Estado |
 |---|---|---|---|
 | `safedrop/led/cmd` | Broker → ESP32 | Encender/apagar LED | Probado |
-| `safedrop/rele/cmd` | Broker → ESP32 | Activar/desactivar relé | Probado |
+| `safedrop/rele/cmd` | Broker → ESP32 | Relé ON/OFF/AUTO (automático PIR + oscuridad) | Probado por separado; integración por verificar |
 | `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
 | `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
 | `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 en cm | Probado |
 | `safedrop/puerta/cmd` | Broker → ESP32 | Apertura/cierre SG90 con ABRIR/CERRAR | Firmware implementado; validación MQTT pendiente |
 | `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer activo ON/OFF | Probado |
+| `safedrop/estado/rele` | ESP32 → Broker | Estado ON/OFF del relé integrado | Integrado en código |
+| `safedrop/estado/led` | ESP32 → Broker | Estado ON/OFF del LED integrado | Integrado en código |
+| `safedrop/eventos/objeto` | ESP32 → Broker | Detección de objeto por HC-SR04 | Integrado en código |
 | `safedrop/cam/frame` | Cámara → Broker | Fotograma de cámara | Propuesto; hoy se usa TCP |
 
 ## 🛠️ Hardware
@@ -100,17 +103,19 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 ### Primera integración del ESP32 de control
 
 Se agregó [`firmware/esp32-control/safedrop_integrado.py`](firmware/esp32-control/safedrop_integrado.py)
-para publicar simultáneamente PIR, LDR y distancia por MQTT, simular
-iluminación nocturna con el LED y avisar por buzzer cuando se detecta
-la entrada de un objeto en el rango del HC-SR04.
+para publicar simultáneamente PIR, LDR y distancia por MQTT, controlar
+**relé GPIO26 y LED GPIO21** cuando hay movimiento y oscuridad, y avisar
+por buzzer cuando se detecta la entrada de un objeto en el rango del HC-SR04.
+El relé también acepta los comandos MQTT `AUTO`, `ON` y `OFF` para
+pruebas sin carga de red doméstica.
 
-**Estado:** firmware integrado preparado; la prueba simultánea con todos
-los dispositivos y la calibración de umbrales siguen pendientes.
-El **foco, el relé de iluminación y el servomotor SG90 quedan fuera
-de esta versión**. El LED es una simulación de iluminación y la
-detección de proximidad no equivale a recepción segura de un paquete.
+**Estado:** firmware integrado preparado; faltan la prueba simultánea con
+todos los dispositivos y la calibración de umbrales.
+**El relé sí está integrado; el foco de 120 V NO está conectado y el
+servomotor SG90 queda fuera de esta versión.** La detección de proximidad
+no equivale a recepción segura de un paquete.
 
-Tópicos nuevos: `safedrop/estado/led` y
+Tópicos nuevos: `safedrop/estado/rele`, `safedrop/estado/led` y
 `safedrop/eventos/objeto`. Instrucciones y precauciones en el
 [README del ESP32 de control](firmware/esp32-control/README.md).
 
@@ -218,7 +223,7 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 | Sprint | Avances confirmados | Pendiente principal |
 |---|---|---|
-| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, buzzer, movimiento SG90 y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | Comprobar control MQTT SG90, integración, evidencias y esquemático |
+| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, buzzer, movimiento SG90 y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | Probar firmware integrado PIR + LDR + relé + HC-SR04 + buzzer; evidencias y esquemático |
 | 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Publicar decisión por MQTT, controlar SG90 e IA exigida por la materia |
 | 3 — Firebase y carcasa | Arquitectura planeada | Firebase, dashboard, prototipo en carcasa |
 | 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
