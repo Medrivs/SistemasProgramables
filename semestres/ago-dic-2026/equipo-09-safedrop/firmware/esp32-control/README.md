@@ -16,22 +16,27 @@ no todavia el firmware integrado del buzon.
 ## Firmware integrado de laboratorio
 
 [`safedrop_integrado.py`](safedrop_integrado.py) reúne en **un solo proceso**
-los sensores PIR (GPIO27), LDR (GPIO34) y HC-SR04 (TRIG GPIO18 /
-ECHO GPIO19 con divisor de tensión). Publica en los mismos tópicos MQTT
-de las pruebas individuales y añade:
+los sensores PIR (GPIO27), LDR (GPIO34), HC-SR04 (TRIG GPIO18 /
+ECHO GPIO19 mediante divisor), relé GPIO26, LED GPIO21 y buzzer GPIO25.
+Conserva los tópicos MQTT de las pruebas individuales y añade:
 
-- `safedrop/estado/led`: el LED GPIO21 simula la iluminación si hay movimiento
-  y oscuridad; inicia con umbrales ADC 3000 (oscuro) / 2500 (claro).
-- `safedrop/eventos/objeto`: detecta la aproximación de un objeto con
-  el ultrasónico y activa un pitido breve en el buzzer GPIO25.
-  Umbrales preliminares: cerca <= 15 cm, zona libre >= 20 cm,
-  dos lecturas consecutivas. **No prueba la validación de un paquete**.
+- `safedrop/estado/rele` y `safedrop/estado/led`: ambos indican ON/OFF.
+  En modo `AUTO`, PIR + oscuridad activan el relé y el LED juntos.
+  Umbrales LDR iniciales: 3000 (oscuro) y 2500 (claro), con histéresis.
+- `safedrop/rele/cmd`: recibe `AUTO`, `ON` y `OFF`. El modo inicial es
+  `AUTO`; `ON` y `OFF` sirven para probar **el relé sin foco conectado**.
+- `safedrop/buzzer/cmd`: recibe `ON` (pitido breve) y `OFF`.
+- `safedrop/eventos/objeto`: publica `OBJETO_DETECTADO` o `ZONA_LIBRE`
+  según el HC-SR04. Cerca <= 15 cm y libre >= 20 cm, con dos lecturas
+  consecutivas. El buzzer pita al detectar un objeto nuevo.
+  **Detectar proximidad no significa validar una entrega.**
 
-**Integración recién implementada en código; ejecutar prueba conjunta
-con el cableado completo antes de considerarla validada.**
-El relé, el foco de corriente doméstica y el SG90 permanecen fuera de este
-programa. No lo guardar como `main.py` por ahora. Un `config.py` privado
-con SSID, contraseña e IP del broker debe estar en la ESP32.
+**Integración implementada en código; hace falta realizar la prueba conjunta
+con el cableado completo antes de declararla validada.**
+El **relé sí forma parte del firmware integrado**, pero sin foco de 120 V
+conectado. El SG90 permanece fuera de esta versión.
+No guardarlo aún como `main.py`. Mantener un `config.py` privado con SSID,
+contraseña e IP local del broker en la ESP32.
 
 ```cmd
 "C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t "safedrop/#" -v
@@ -39,6 +44,17 @@ con SSID, contraseña e IP del broker debe estar en la ESP32.
 
 El buzzer debe ser compatible en tensión **y corriente** con el GPIO o
 accionarse por transistor. No conectar ECHO 5 V directamente a la ESP32.
+El relé conserva la polaridad activa LOW de `rele_mqtt.py`
+(`RELE_ON = 0`, `RELE_OFF = 1`) y se apaga al salir del programa.
+Verificar la polaridad real y probar siempre sin foco de corriente doméstica.
+
+Comandos manuales de diagnóstico del relé (modo automático por defecto):
+
+```cmd
+"C:\\Program Files\\mosquitto\\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m ON
+"C:\\Program Files\\mosquitto\\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m OFF
+"C:\\Program Files\\mosquitto\\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m AUTO
+```
 
 ## Avances comprobados
 
@@ -176,8 +192,8 @@ mueve a 3.3 V sin carga no garantiza funcionamiento bajo esfuerzo.
 
 ## Pendiente para siguientes versiones
 
-- Integrar PIR + LDR + rele para iluminacion automatica;
-  probar la logica sin carga de red domestica.
+- Verificar en conjunto la logica PIR + LDR + rele automatico (sin foco conectado).
+  El programa integrado ya la implementa en codigo.
 - Verificar en hardware la comunicacion MQTT de `servo_mqtt.py` y calibrar el mecanismo del SG90; ya publican PIR, LDR y HC-SR04 y responde el buzzer.
 - Integrar autorizacion QR desde Python y comandos MQTT al servo.
 - Implementar reconexion y estado seguro ante perdida de conexion.
