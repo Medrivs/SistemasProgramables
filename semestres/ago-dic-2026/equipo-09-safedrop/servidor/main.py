@@ -1,3 +1,15 @@
+# ============================================
+# Proyecto:  SafeDrop
+# Archivo:   main.py
+# Objetivo:  Recibir fotogramas RGB565 y decodificar QR con OpenCV y pyzbar.
+# Equipo:    09
+# Integrantes:
+#   Alan Medina Rivas - 23240436
+#   Victor Hugo Ojeda Cabrera - 23240390
+# Materia:   Sistemas Programables - ISC TecNM Leon
+# Semestre:  ago-dic-2026
+# ============================================
+
 import socket
 import cv2
 import numpy as np
