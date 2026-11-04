@@ -7,6 +7,27 @@
 Esta tabla distingue conexiones **probadas** de conexiones **propuestas**; no se deben presentar
 como probados los dispositivos que aún no se han conectado y comprobado.
 
+## Integración de firmware
+
+Se agregó `firmware/esp32-control/safedrop_integrado.py` para ejecutar
+PIR, LDR y HC-SR04 al mismo tiempo, y simular la iluminación con LED,
+además de un aviso breve mediante buzzer cuando la distancia cambia
+de zona libre a zona ocupada. Este archivo aún requiere prueba conjunta.
+
+| Componente | Operación integrada | Estado |
+|---|---|---|
+| PIR GPIO27 | Telemetría MQTT y movimiento para LED | Implementado, integración por probar |
+| LDR GPIO34 | Telemetría MQTT y oscuridad para LED | Implementado, calibración pendiente |
+| HC-SR04 GPIO18/19 | Telemetría MQTT, detector de proximidad para buzzer | Implementado, umbral por calibrar |
+| LED GPIO21 | Simula foco sin usar relé de 120 V | Implementado, integración por probar |
+| Buzzer GPIO25 | Pitido de 250 ms ante objeto nuevo | Implementado, integración por probar |
+| Relé GPIO26 / foco | No controlados en firmware integrado | Pendientes |
+| SG90 GPIO23 | No controlado en firmware integrado | Pendiente de integración |
+
+**Tópicos adicionales:** `safedrop/estado/led` y
+`safedrop/eventos/objeto`. El evento indica proximidad, **no una entrega
+autorizada o confirmada**. Todos los umbrales son valores iniciales de mesa.
+
 ## Tabla de componentes y comunicación
 
 | # | Componente | Tipo | Pin ESP32 control | Tópico publicación | Tópico suscripción | Unidad / rango | Estado |
