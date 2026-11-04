@@ -1,3 +1,15 @@
+# ============================================
+# Proyecto:  SafeDrop
+# Archivo:   main.py
+# Objetivo:  Capturar imagen RGB565 desde OV3660 y enviarla al servidor TCP.
+# Equipo:    09
+# Integrantes:
+#   Alan Medina Rivas - 23240436
+#   Victor Hugo Ojeda Cabrera - 23240390
+# Materia:   Sistemas Programables - ISC TecNM Leon
+# Semestre:  ago-dic-2026
+# ============================================
+
 import network
 import socket
 import camera
