@@ -27,6 +27,7 @@ no todavia el firmware integrado del buzon.
 | LDR + MQTT | Enviar lectura de luz al broker | Valores recibidos en CMD, confirmado por el equipo |
 | HC-SR04 + MQTT | Medir distancia (GPIO18 TRIG / GPIO19 ECHO) | Distancias recibidas en CMD, confirmado por el equipo |
 | Buzzer activo 3.3 V + MQTT | GPIO25, comandos ON/OFF | Sonido fisico y control por CMD confirmados por el equipo |
+| Servo SG90 | Movimiento fisico del servomotor | Funcionamiento fisico confirmado por el equipo; codigo de control MQTT incorporado |
 
 ### Observaciones del LDR
 
@@ -46,6 +47,7 @@ se determinara al integrar los sensores.
 | `ldr_mqtt.py` | 34 (ADC1) | `safedrop/sensores/ldr` | Publica valor ADC cada 2 segundos |
 | `ultrasonico_mqtt.py` | 18 TRIG / 19 ECHO | `safedrop/sensores/distancia` | Publica distancia en cm cada 2 segundos |
 | `buzzer_mqtt.py` | 25 | `safedrop/buzzer/cmd` | Recibe ON/OFF |
+| `servo_mqtt.py` | 23 (PWM) | `safedrop/puerta/cmd` | Recibe ABRIR/CERRAR |
 | `config.example.py` | - | - | Plantilla Wi-Fi/IP del broker |
 
 ### Conexiones de sensores ya probadas
@@ -117,6 +119,22 @@ GPIO solo es adecuada si su corriente es compatible con el limite del pin;
 verificar su consumo o usar un transistor si es necesario. Enviar OFF
 tras la prueba: ON deja al buzzer activado hasta recibir OFF.
 
+## Control del servomotor SG90
+
+El SG90 ya se movio correctamente en una prueba fisica del equipo. El
+archivo `servo_mqtt.py` incorpora la recepcion de comandos `ABRIR` y
+`CERRAR` para GPIO23; debe comprobarse la respuesta MQTT sobre la placa
+antes de usar el seguro mecanico del buzon.
+
+```cmd
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/puerta/cmd -m ABRIR
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/puerta/cmd -m CERRAR
+```
+
+Los angulos 0 y 90 grados son iniciales y necesitan calibrarse sin carga.
+La alimentacion del servo requiere corriente suficiente; un SG90 que se
+mueve a 3.3 V sin carga no garantiza funcionamiento bajo esfuerzo.
+
 ## Seguridad del rele y foco
 
 - El rele se ha probado por MQTT; **el foco de 120 V aun no esta
@@ -133,7 +151,7 @@ tras la prueba: ON deja al buzzer activado hasta recibir OFF.
 
 - Integrar PIR + LDR + rele para iluminacion automatica;
   probar la logica sin carga de red domestica.
-- Probar el servomotor SG90 y su control MQTT; ya publican por MQTT PIR, LDR y HC-SR04 y responde el buzzer.
+- Verificar en hardware la comunicacion MQTT de `servo_mqtt.py` y calibrar el mecanismo del SG90; ya publican PIR, LDR y HC-SR04 y responde el buzzer.
 - Integrar autorizacion QR desde Python y comandos MQTT al servo.
 - Implementar reconexion y estado seguro ante perdida de conexion.
 - Firebase, dashboard, carcasa, esquematicos y reporte final.
