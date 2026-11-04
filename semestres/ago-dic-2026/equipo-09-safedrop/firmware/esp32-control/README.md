@@ -1,66 +1,114 @@
-# SafeDrop - Pruebas de ESP32 de control (Sprint 1)
+# SafeDrop - ESP32 de control (Sprint 1)
 
-Pruebas de comunicacion MQTT desde Windows/Mosquitto hacia un ESP32 clasico
-con MicroPython. Se agregan como evidencia incremental de desarrollo; no
-representan todavia el firmware final del buzon.
+**Proyecto:** SafeDrop - Buzon inteligente  
+**Equipo:** 09  
+**Integrantes:**
+- Alan Medina Rivas - 23240436
+- Victor Hugo Ojeda Cabrera - 23240390
 
-## Avances comprobados en laboratorio
+**Materia:** Sistemas Programables - ISC TecNM Leon  
+**Semestre:** ago-dic-2026
 
-- Broker Mosquitto 2.1.2 en PC, puerto 1883, publico y recibio `Hola SafeDrop`.
-- ESP32 clasico con MicroPython 1.28.0 y `umqtt.simple` disponible.
-- Recepcion de `ON` y `OFF` por MQTT: consola de Thonny mostro
-  `LED encendido` / `LED apagado`.
-- Segun la prueba reportada por el equipo, el modulo rele tambien funciono
-  mediante MQTT. **Aun no se conecto ni verifico un foco de 12 V.**
+Este directorio documenta las pruebas progresivas del ESP32 estandar
+con MicroPython y Mosquitto. Son programas individuales de prueba,
+no todavia el firmware integrado del buzon.
 
-## Archivos
+## Avances comprobados
 
-- `led_mqtt.py`: GPIO21 y topico `safedrop/led/cmd`.
-- `rele_mqtt.py`: GPIO26 y topico `safedrop/rele/cmd`.
-- `config.example.py`: plantilla sin credenciales para crear `config.py`.
+| Modulo | Prueba realizada | Resultado |
+| --- | --- | --- |
+| MQTT / Mosquitto | Publicar y recibir `Hola SafeDrop` en Windows | Correcto |
+| ESP32 | MicroPython 1.28.0 y `umqtt.simple` | Correcto |
+| LED | Recibir `ON` y `OFF` desde CMD por MQTT | Mensajes procesados en Thonny |
+| Rele 5 V (dos canales) | Activar y desactivar canal por MQTT | Funcionamiento reportado por el equipo |
+| PIR HC-SR501 | Detectar movimiento con GPIO27 | Lecturas 1/0 en Thonny |
+| PIR + MQTT | Publicar cambios de movimiento | Publicaciones 1/0 reportadas desde Thonny |
+| LDR LM393 (cuatro pines) | Leer iluminacion por AO en GPIO34 | Lecturas 0-4095 cambiantes |
+| LDR + MQTT | Enviar lectura de luz al broker | Valores recibidos en CMD, confirmado por el equipo |
 
-## Preparacion
+### Observaciones del LDR
 
-1. Crear `config.py` a partir de `config.example.py`, con Wi-Fi y la
-   direccion IP real del broker, sin publicarlo en GitHub.
-2. Copiar `config.py` y **solo uno** de los scripts al ESP32, ejecutandolo
-   manualmente en Thonny. No guardarlo todavia como `main.py`.
-3. El LED externo necesita resistencia limitadora. Si no se conecta LED,
-   solo se comprueban mensajes y cambios de nivel logico.
-4. Probar el rele **sin carga en los contactos de tornillo**. Verificar el
-   voltaje de alimentacion, compatibilidad 3.3 V de entrada y polaridad
-   activa (LOW/HIGH) antes de energizarlo.
-5. No conectar focos de red domestica a una protoboard. Para el foco de
-   12 V se requiere una fuente de 12 V compatible e instalacion segura.
+En el modulo probado, **un valor mayor indica menos luz**.
+Se observaron lecturas aproximadas de 11-347 con luz intensa y
+3632-3639 al oscurecerlo. Es una orientacion experimental,
+no una calibracion definitiva. El umbral para activar iluminacion
+se determinara al integrar los sensores.
 
-## Prueba CMD (Windows)
+## Archivos y topicos
 
-Suscripcion de diagnostico (opcional):
+| Archivo | GPIO | Topico MQTT | Funcion |
+| --- | --- | --- | --- |
+| `led_mqtt.py` | 21 | `safedrop/led/cmd` | ON/OFF |
+| `rele_mqtt.py` | 26 | `safedrop/rele/cmd` | ON/OFF (comprobar polaridad del rele) |
+| `pir_mqtt.py` | 27 | `safedrop/sensores/pir` | Publica 1 (movimiento) / 0 |
+| `ldr_mqtt.py` | 34 (ADC1) | `safedrop/sensores/ldr` | Publica valor ADC cada 2 segundos |
+| `config.example.py` | - | - | Plantilla Wi-Fi/IP del broker |
+
+### Conexiones de sensores ya probadas
+
+**PIR HC-SR501:** VCC a alimentacion compatible de 5 V,
+GND a GND, OUT a GPIO27. Verificar que OUT no exceda
+3.3 V antes de conectarlo a la ESP32.
+
+**LDR con LM393:** VCC a 3V3, GND a GND, AO a GPIO34
+y DO sin conectar.
+
+## Ejecutar pruebas
+
+1. Copiar `config.example.py` como `config.py` y poner las
+   credenciales Wi-Fi y la IP local de la computadora con Mosquitto.
+   **Nunca publicar `config.py`**.
+2. Colocar `config.py` y el script de prueba elegido en la ESP32,
+   y ejecutarlo manualmente con Thonny.
+3. No guardar los scripts de prueba como `main.py` automaticamente
+   antes de integrar las condiciones de seguridad.
+4. Abrir CMD para observar MQTT:
 
 ```cmd
 "C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t "safedrop/#" -v
 ```
 
-Encender/apagar LED:
+Control de LED:
 
 ```cmd
 "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/led/cmd -m ON
 "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/led/cmd -m OFF
 ```
 
-Activar/desactivar rele:
+Control de rele:
 
 ```cmd
 "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m ON
 "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m OFF
 ```
 
-## Pendiente
+Suscripciones individuales:
 
-- Verificacion de actuacion fisica y alimentacion del foco de 12 V.
-- PIR, LDR, ultrasonico, buzzer y servomotor SG90.
-- Reconexiones MQTT, estado seguro ante desconexion, autorizacion y
-  validacion de comandos, integracion con la vision QR, Firebase y carcasa.
-- Completar matriculas y encabezados individuales de todos los archivos Python.
+```cmd
+"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t safedrop/sensores/pir -v
+"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t safedrop/sensores/ldr -v
+```
 
-**Nota:** El broker de pruebas no debe quedar expuesto sin autenticacion.
+## Seguridad del rele y foco
+
+- El rele se ha probado por MQTT; **el foco de 120 V aun no esta
+  conectado ni validado como parte de SafeDrop**.
+- La instalacion de corriente domestica debe estar protegida
+  y verificada por personal calificado; nunca cablear 120 V
+  en una protoboard ni dejar conexiones expuestas.
+- Verificar alimentacion de 5 V, compatibilidad de la entrada
+  con control de 3.3 V y polaridad activa LOW/HIGH del modulo.
+- El broker de laboratorio no debe quedar expuesto sin autenticacion
+  a redes no confiables.
+
+## Pendiente para siguientes versiones
+
+- Integrar PIR + LDR + rele para iluminacion automatica;
+  probar la logica sin carga de red domestica.
+- Probar HC-SR04, buzzer y servomotor SG90.
+- Integrar autorizacion QR desde Python y comandos MQTT al servo.
+- Implementar reconexion y estado seguro ante perdida de conexion.
+- Firebase, dashboard, carcasa, esquematicos y reporte final.
+
+Cada prueba se conserva de forma independiente para documentar
+la evolucion del Sprint 1.
