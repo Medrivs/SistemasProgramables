@@ -97,6 +97,23 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 - `servo_mqtt.py`: controla el SG90 por GPIO23 mediante comandos ABRIR/CERRAR; firmware agregado para integración.
 - `config.example.py`: plantilla para la configuración privada.
 
+### Primera integración del ESP32 de control
+
+Se agregó [`firmware/esp32-control/safedrop_integrado.py`](firmware/esp32-control/safedrop_integrado.py)
+para publicar simultáneamente PIR, LDR y distancia por MQTT, simular
+iluminación nocturna con el LED y avisar por buzzer cuando se detecta
+la entrada de un objeto en el rango del HC-SR04.
+
+**Estado:** firmware integrado preparado; la prueba simultánea con todos
+los dispositivos y la calibración de umbrales siguen pendientes.
+El **foco, el relé de iluminación y el servomotor SG90 quedan fuera
+de esta versión**. El LED es una simulación de iluminación y la
+detección de proximidad no equivale a recepción segura de un paquete.
+
+Tópicos nuevos: `safedrop/estado/led` y
+`safedrop/eventos/objeto`. Instrucciones y precauciones en el
+[README del ESP32 de control](firmware/esp32-control/README.md).
+
 ### Visión ESP32-S3
 
 [`firmware/esp32s3-vision/main.py`](firmware/esp32s3-vision/main.py):
