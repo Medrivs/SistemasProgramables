@@ -26,6 +26,7 @@ no todavia el firmware integrado del buzon.
 | LDR LM393 (cuatro pines) | Leer iluminacion por AO en GPIO34 | Lecturas 0-4095 cambiantes |
 | LDR + MQTT | Enviar lectura de luz al broker | Valores recibidos en CMD, confirmado por el equipo |
 | HC-SR04 + MQTT | Medir distancia (GPIO18 TRIG / GPIO19 ECHO) | Distancias recibidas en CMD, confirmado por el equipo |
+| Buzzer activo 3.3 V + MQTT | GPIO25, comandos ON/OFF | Sonido fisico y control por CMD confirmados por el equipo |
 
 ### Observaciones del LDR
 
@@ -44,6 +45,7 @@ se determinara al integrar los sensores.
 | `pir_mqtt.py` | 27 | `safedrop/sensores/pir` | Publica 1 (movimiento) / 0 |
 | `ldr_mqtt.py` | 34 (ADC1) | `safedrop/sensores/ldr` | Publica valor ADC cada 2 segundos |
 | `ultrasonico_mqtt.py` | 18 TRIG / 19 ECHO | `safedrop/sensores/distancia` | Publica distancia en cm cada 2 segundos |
+| `buzzer_mqtt.py` | 25 | `safedrop/buzzer/cmd` | Recibe ON/OFF |
 | `config.example.py` | - | - | Plantilla Wi-Fi/IP del broker |
 
 ### Conexiones de sensores ya probadas
@@ -101,6 +103,20 @@ Suscripcion especifica del sensor de distancia:
 "C:\\Program Files\\mosquitto\\mosquitto_sub.exe" -h localhost -t safedrop/sensores/distancia -v
 ```
 
+## Control del buzzer
+
+Comandos MQTT para probar el buzzer:
+
+```cmd
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/buzzer/cmd -m ON
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/buzzer/cmd -m OFF
+```
+
+El buzzer activo de 3.3 V se probo en GPIO25. La conexion directa al
+GPIO solo es adecuada si su corriente es compatible con el limite del pin;
+verificar su consumo o usar un transistor si es necesario. Enviar OFF
+tras la prueba: ON deja al buzzer activado hasta recibir OFF.
+
 ## Seguridad del rele y foco
 
 - El rele se ha probado por MQTT; **el foco de 120 V aun no esta
@@ -117,7 +133,7 @@ Suscripcion especifica del sensor de distancia:
 
 - Integrar PIR + LDR + rele para iluminacion automatica;
   probar la logica sin carga de red domestica.
-- Probar buzzer y servomotor SG90; ya publican por MQTT PIR, LDR y HC-SR04.
+- Probar el servomotor SG90 y su control MQTT; ya publican por MQTT PIR, LDR y HC-SR04 y responde el buzzer.
 - Integrar autorizacion QR desde Python y comandos MQTT al servo.
 - Implementar reconexion y estado seguro ante perdida de conexion.
 - Firebase, dashboard, carcasa, esquematicos y reporte final.
