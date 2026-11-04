@@ -15,7 +15,7 @@ como probados los dispositivos que aún no se han conectado y comprobado.
 | 2 | LDR con LM393 (AO) | Sensor analógico | GPIO34 (ADC1) | `safedrop/sensores/ldr` | — | ADC 0 a 4095; en pruebas ~11 a 3639 | **Probado**, lectura y recepción MQTT en CMD |
 | 3 | HC-SR04 | Sensor de distancia | GPIO18 TRIG / GPIO19 ECHO (con divisor) | `safedrop/sensores/distancia` | — | centímetros; lectura medida en prueba | **Probado**, lectura y recepción MQTT en CMD |
 | 4 | Módulo relé 2 canales (canal 1) | Actuador de control | GPIO26 IN1 | — | `safedrop/rele/cmd` | ON / OFF | **Probado** comando MQTT; foco NO conectado |
-| 5 | Servomotor SG90 | Actuador | GPIO23 PWM (propuesto) | — | `safedrop/puerta/cmd` (propuesto) | grados, apertura por calibrar | **Pendiente** |
+| 5 | Servomotor SG90 | Actuador | GPIO23 PWM | — | `safedrop/puerta/cmd` | 0° cerrado / 90° abierto (posiciones iniciales) | **Movimiento físico probado**; firmware MQTT incorporado, respuesta MQTT por comprobar |
 | 6 | Buzzer activo 3.3 V | Actuador | GPIO25 | — | `safedrop/buzzer/cmd` | ON / OFF | **Probado**, sonido fisico y recepcion de ON/OFF por MQTT |
 | 7 | LED de pruebas | Actuador auxiliar | GPIO21 | — | `safedrop/led/cmd` | ON / OFF | **Probado** mediante comandos MQTT |
 | 8 | ESP32-S3 + cámara OV3660 | Cámara / microcontrolador separado | No aplica al ESP32 de control | `safedrop/cam/frame` (objetivo, NO implementado) | — | RGB565, 160×120 | Captura y envío **TCP puerto 5000** probados; publicación MQTT de imágenes pendiente |
@@ -30,6 +30,7 @@ como probados los dispositivos que aún no se han conectado y comprobado.
   El umbral de oscuridad debe calibrarse en la carcasa.
 - **HC-SR04:** VCC a 5 V, GND común, TRIG a GPIO18, ECHO a GPIO19 a través de divisor de tensión para bajar 5 V a 3.3 V o menos. Distancia publicada en centímetros por MQTT.
 - **Buzzer activo de 3.3 V:** positivo a GPIO25 y negativo a GND en la prueba reportada. Para usar un GPIO directamente, comprobar que la corriente del buzzer no exceda la capacidad del pin; si no, usar un transistor de conmutacion.
+- **SG90:** senal PWM a GPIO23 y GND comun con ESP32. El equipo confirmo movimiento fisico; las posiciones de apertura/cierre deben calibrarse sin carga, y la alimentacion debe soportar los picos de corriente del servo.
 - **LED de prueba:** GPIO21, con resistencia limitadora si el LED es externo.
 - **Relé:** IN1 a GPIO26, módulo alimentado con 5 V adecuados. Verificar
   compatibilidad con 3.3 V de señal y polaridad activa (LOW/HIGH).
@@ -56,12 +57,15 @@ como probados los dispositivos que aún no se han conectado y comprobado.
 - [x] Tercer sensor HC-SR04 publicando lectura
 - [x] LED de prueba respondiendo a MQTT
 - [x] Relé respondiendo a MQTT
-- [ ] Servomotor SG90 respondiendo a MQTT
+- [x] Movimiento físico del servomotor SG90
+- [x] Firmware `servo_mqtt.py` agregado
+- [ ] Respuesta del SG90 a comandos MQTT verificada en la placa
 - [x] Buzzer respondiendo a MQTT
 - [ ] Evidencia fotográfica del circuito y captura final de consola
 - [ ] Esquemático de conexiones validado y exportado
 
 **Nota:** la rúbrica pide tres sensores y tres actuadores mediante MQTT.
-**Los tres sensores ya han publicado por MQTT**, pero aún no se ha alcanzado
-la integracion del servomotor SG90 dentro de los actuadores principales del sistema. Los archivos del
+**Los tres sensores ya han publicado por MQTT**. El servomotor SG90 ya se movio
+fisicamente; su integracion y verificacion mediante MQTT forman parte del
+siguiente paso. Los archivos del
 repositorio representan el avance real del equipo.
