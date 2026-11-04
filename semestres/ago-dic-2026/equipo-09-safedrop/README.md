@@ -49,7 +49,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
 | `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
 | `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 en cm | Probado |
-| `safedrop/puerta/cmd` | Broker → ESP32 | Control SG90 | Propuesto |
+| `safedrop/puerta/cmd` | Broker → ESP32 | Apertura/cierre SG90 con ABRIR/CERRAR | Firmware implementado; validación MQTT pendiente |
 | `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer activo ON/OFF | Probado |
 | `safedrop/cam/frame` | Cámara → Broker | Fotograma de cámara | Propuesto; hoy se usa TCP |
 
@@ -63,7 +63,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | 4 | LDR LM393 | Sensor | 1 | Probado |
 | 5 | HC-SR04 | Sensor | 1 | Distancia y publicación MQTT probadas |
 | 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado |
-| 7 | Servomotor SG90 | Actuador | 1 | Disponible; pendiente |
+| 7 | Servomotor SG90 | Actuador | 1 | Movimiento físico confirmado; firmware MQTT incorporado |
 | 8 | Buzzer y LED | Actuadores | 1 de cada uno | Ambos probados por MQTT |
 | 9 | Celda de carga + HX711 | Sensor no convencional | 1 | Pendiente de conseguir |
 | 10 | Protoboard y cables | Montaje prototipo | Varios | Disponibles |
@@ -94,6 +94,7 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 - `ldr_mqtt.py`: nivel analógico por GPIO34 (ADC1).
 - `ultrasonico_mqtt.py`: distancia HC-SR04 en cm; TRIG GPIO18, ECHO GPIO19 con divisor de tensión.
 - `buzzer_mqtt.py`: buzzer activo 3.3 V, comandos MQTT ON/OFF en GPIO25.
+- `servo_mqtt.py`: controla el SG90 por GPIO23 mediante comandos ABRIR/CERRAR; firmware agregado para integración.
 - `config.example.py`: plantilla para la configuración privada.
 
 ### Visión ESP32-S3
@@ -167,7 +168,7 @@ conexiones verificadas y pines/tópicos propuestos sin confundirlos.
 | LDR (AO) | 34 | `safedrop/sensores/ldr` | Probado |
 | HC-SR04 | 18 / 19 (ECHO con divisor) | `safedrop/sensores/distancia` | Probado |
 | Relé | 26 | `safedrop/rele/cmd` | Probado |
-| SG90 | 23 (propuesto) | `safedrop/puerta/cmd` | Pendiente |
+| SG90 | 23 (PWM) | `safedrop/puerta/cmd` | Movimiento físico confirmado; validación MQTT pendiente |
 | Buzzer activo | 25 | `safedrop/buzzer/cmd` | Probado |
 
 ## 🔥 Esquema Firebase (previsto, no implementado)
@@ -200,7 +201,7 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 | Sprint | Avances confirmados | Pendiente principal |
 |---|---|---|
-| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, buzzer y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | SG90, integración, evidencias y esquemático |
+| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, buzzer, movimiento SG90 y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | Comprobar control MQTT SG90, integración, evidencias y esquemático |
 | 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Publicar decisión por MQTT, controlar SG90 e IA exigida por la materia |
 | 3 — Firebase y carcasa | Arquitectura planeada | Firebase, dashboard, prototipo en carcasa |
 | 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
