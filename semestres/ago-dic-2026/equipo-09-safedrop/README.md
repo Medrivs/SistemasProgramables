@@ -67,7 +67,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado |
 | 7 | Servomotor SG90 | Actuador | 1 | Movimiento físico confirmado; firmware MQTT incorporado |
 | 8 | Buzzer activo 3.3 V | Actuador | 1 | MQTT probado individualmente |
-| 9 | Celda de carga + HX711 | Sensor no convencional | 0 en esta versión | Excluidos del montaje actual |
+| 9 | Celda de carga + HX711 | Sensor requerido para medir peso | 1 conjunto previsto | Pendiente de recibir e integrar; GPIO32/33 reservados |
 | 10 | Protoboard y cables | Montaje prototipo | Varios | Disponibles |
 | 11 | Foco 120/127 V | Iluminación controlada por relé | 1 | Control lógico integrado; instalación eléctrica protegida pendiente |
 
@@ -99,7 +99,7 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 - `servo_mqtt.py`: prueba individual del SG90 por GPIO23 mediante comandos ABRIR/CERRAR.
 - `config.example.py`: plantilla para la configuración privada.
 
-### Integración del ESP32 de control (sin LED ni HX711)
+### Integración del ESP32 de control (sin LED; HX711 pendiente de llegar)
 
 [`firmware/esp32-control/safedrop_integrado.py`](firmware/esp32-control/safedrop_integrado.py)
 reúne **PIR GPIO27, LDR GPIO34, HC-SR04 GPIO18/19, relé GPIO26,
@@ -113,7 +113,7 @@ El SG90 recibe comandos `ABRIR` y `CERRAR` por MQTT.
 La parte de baja tensión del relé está incluida, pero la instalación del
 **foco de 120/127 V debe hacerse en caja cerrada y revisarse por personal
 calificado, nunca en la protoboard**. El programa no incorpora el LED de
-pruebas ni HX711. Proximidad no equivale a entrega autorizada.
+pruebas. El HX711 con celda de carga **sí es obligatorio en el diseño final**, pero se añadirá cuando llegue; no está conectado por ahora. Proximidad no equivale a entrega autorizada.
 
 Publica `safedrop/estado/rele`, `safedrop/estado/puerta` y
 `safedrop/eventos/objeto`. Instrucciones y precauciones en el
@@ -192,6 +192,7 @@ conexiones verificadas y pines/tópicos propuestos sin confundirlos.
 | Relé | 26 | `safedrop/rele/cmd` | Probado |
 | SG90 | 23 (PWM) | `safedrop/puerta/cmd` | Movimiento físico confirmado; validación MQTT pendiente |
 | Buzzer activo | 25 | `safedrop/buzzer/cmd` | Probado |
+| HX711 + celda de carga | 32 DOUT / 33 SCK (reservados) | Por definir | Componente necesario, pendiente de recibir |
 
 ## 🔥 Esquema Firebase (previsto, no implementado)
 
