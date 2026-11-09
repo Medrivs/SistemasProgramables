@@ -44,7 +44,6 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 
 | Tópico | Dirección | Función | Estado |
 |---|---|---|---|
-| `safedrop/led/cmd` | Broker → ESP32 | Encender/apagar LED | Probado |
 | `safedrop/rele/cmd` | Broker → ESP32 | Relé ON/OFF/AUTO (automático PIR + oscuridad) | Probado por separado; integración por verificar |
 | `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
 | `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
@@ -52,8 +51,8 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | `safedrop/puerta/cmd` | Broker → ESP32 | Apertura/cierre SG90 con ABRIR/CERRAR | Firmware implementado; validación MQTT pendiente |
 | `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer activo ON/OFF | Probado |
 | `safedrop/estado/rele` | ESP32 → Broker | Estado ON/OFF del relé integrado | Integrado en código |
-| `safedrop/estado/led` | ESP32 → Broker | Estado ON/OFF del LED integrado | Integrado en código |
 | `safedrop/eventos/objeto` | ESP32 → Broker | Detección de objeto por HC-SR04 | Integrado en código |
+| `safedrop/estado/puerta` | ESP32 → Broker | Posición ordenada al SG90 (ABIERTA/CERRADA) | Integrado en código |
 | `safedrop/cam/frame` | Cámara → Broker | Fotograma de cámara | Propuesto; hoy se usa TCP |
 
 ## 🛠️ Hardware
@@ -67,10 +66,10 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | 5 | HC-SR04 | Sensor | 1 | Distancia y publicación MQTT probadas |
 | 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado |
 | 7 | Servomotor SG90 | Actuador | 1 | Movimiento físico confirmado; firmware MQTT incorporado |
-| 8 | Buzzer y LED | Actuadores | 1 de cada uno | Ambos probados por MQTT |
-| 9 | Celda de carga + HX711 | Sensor no convencional | 1 | Pendiente de conseguir |
+| 8 | Buzzer activo 3.3 V | Actuador | 1 | MQTT probado individualmente |
+| 9 | Celda de carga + HX711 | Sensor no convencional | 0 en esta versión | Excluidos del montaje actual |
 | 10 | Protoboard y cables | Montaje prototipo | Varios | Disponibles |
-| 11 | Foco 120 V | Iluminación | 1 | Sin conectar; instalación protegida pendiente |
+| 11 | Foco 120/127 V | Iluminación controlada por relé | 1 | Control lógico integrado; instalación eléctrica protegida pendiente |
 
 **Costo total real:** pendiente de registrar, sin estimaciones inventadas.
 
@@ -91,31 +90,31 @@ calificado; no debe cablearse en protoboard.
 
 Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 
-- `led_mqtt.py`: comandos ON/OFF para GPIO21.
 - `rele_mqtt.py`: comandos ON/OFF para GPIO26.
 - `pir_mqtt.py`: eventos 0/1 en GPIO27.
 - `ldr_mqtt.py`: nivel analógico por GPIO34 (ADC1).
 - `ultrasonico_mqtt.py`: distancia HC-SR04 en cm; TRIG GPIO18, ECHO GPIO19 con divisor de tensión.
 - `buzzer_mqtt.py`: buzzer activo 3.3 V, comandos MQTT ON/OFF en GPIO25.
-- `servo_mqtt.py`: controla el SG90 por GPIO23 mediante comandos ABRIR/CERRAR; firmware agregado para integración.
+- `servo_mqtt.py`: prueba individual del SG90 por GPIO23 mediante comandos ABRIR/CERRAR.
 - `config.example.py`: plantilla para la configuración privada.
 
-### Primera integración del ESP32 de control
+### Integración del ESP32 de control (sin LED ni HX711)
 
-Se agregó [`firmware/esp32-control/safedrop_integrado.py`](firmware/esp32-control/safedrop_integrado.py)
-para publicar simultáneamente PIR, LDR y distancia por MQTT, controlar
-**relé GPIO26 y LED GPIO21** cuando hay movimiento y oscuridad, y avisar
-por buzzer cuando se detecta la entrada de un objeto en el rango del HC-SR04.
-El relé también acepta los comandos MQTT `AUTO`, `ON` y `OFF` para
-pruebas sin carga de red doméstica.
+[`firmware/esp32-control/safedrop_integrado.py`](firmware/esp32-control/safedrop_integrado.py)
+reúne **PIR GPIO27, LDR GPIO34, HC-SR04 GPIO18/19, relé GPIO26,
+buzzer GPIO25 y SG90 GPIO23** en un solo proceso de MicroPython.
+Publica los tres sensores por MQTT. Con movimiento y oscuridad en modo
+`AUTO`, acciona el relé de iluminación; admite además `ON` y `OFF`
+para pruebas manuales. Un objeto cercano provoca un pitido breve.
+El SG90 recibe comandos `ABRIR` y `CERRAR` por MQTT.
 
-**Estado:** firmware integrado preparado; faltan la prueba simultánea con
-todos los dispositivos y la calibración de umbrales.
-**El relé sí está integrado; el foco de 120 V NO está conectado y el
-servomotor SG90 queda fuera de esta versión.** La detección de proximidad
-no equivale a recepción segura de un paquete.
+**Estado:** código integrado y publicado, **prueba simultánea pendiente**.
+La parte de baja tensión del relé está incluida, pero la instalación del
+**foco de 120/127 V debe hacerse en caja cerrada y revisarse por personal
+calificado, nunca en la protoboard**. El programa no incorpora el LED de
+pruebas ni HX711. Proximidad no equivale a entrega autorizada.
 
-Tópicos nuevos: `safedrop/estado/rele`, `safedrop/estado/led` y
+Publica `safedrop/estado/rele`, `safedrop/estado/puerta` y
 `safedrop/eventos/objeto`. Instrucciones y precauciones en el
 [README del ESP32 de control](firmware/esp32-control/README.md).
 
@@ -223,7 +222,7 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 | Sprint | Avances confirmados | Pendiente principal |
 |---|---|---|
-| 1 — Hardware, MQTT y HAL | Mosquitto, LED, relé, buzzer, movimiento SG90 y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | Probar firmware integrado PIR + LDR + relé + HC-SR04 + buzzer; evidencias y esquemático |
+| 1 — Hardware, MQTT y HAL | Mosquitto, relé, buzzer, movimiento SG90 y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | Probar firmware conjunto con SG90 y relé; evidencias y esquemático |
 | 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Publicar decisión por MQTT, controlar SG90 e IA exigida por la materia |
 | 3 — Firebase y carcasa | Arquitectura planeada | Firebase, dashboard, prototipo en carcasa |
 | 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
@@ -239,8 +238,9 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 4. La señal del LDR es inversa a la iluminación (valores altos = menos luz);
    necesita calibración para accionar la iluminación.
 5. El HC-SR04 alimentado a 5 V necesita adaptar ECHO a 3.3 V o menos antes de conectarlo al GPIO19.
-6. No se ha conectado el foco de 120 V; solo se aceptará una instalación
-   protegida y revisada.
+6. El control del relé de iluminación ya está en el firmware; el foco de
+   120/127 V requiere un circuito aislado en caja adecuada, instalado o
+   revisado profesionalmente y sin cables de red en protoboard.
 
 ---
 
