@@ -19,7 +19,7 @@ comprobar su funcionamiento simultáneo.
 | 7 | Foco 120/127 V | Carga del relé, **fuera de protoboard** | Sin GPIO directo; se conmuta por relé | — | — | Circuito de carga aislado y protegido por instalar |
 | 8 | ESP32-S3 + OV3660 | Visión, MCU separado | No comparte GPIO con ESP32 de control | Captura RGB565 por TCP al servidor | — | Cámara y QR probados; puente MQTT por integrar |
 
-**No forma parte del montaje actual:** LED de pruebas ni HX711/celda de carga.
+**LED de pruebas retirado definitivamente.** El **HX711 y la celda de carga sí forman parte del diseño final de SafeDrop**, pero aún no llegan y por ello no aparecen en el montaje temporal. Se reservarán GPIO32 (DOUT/DT) y GPIO33 (SCK) para su incorporación posterior; verificar el cableado y compatibilidad cuando lleguen.
 
 ## Distribución de alimentación y señales
 
@@ -66,6 +66,7 @@ que confirme que la puerta alcanzó el ángulo ordenado.
 - [ ] Verificar alimentación y torque del SG90 en la cerradura
 - [ ] Instalar foco a través de circuito eléctrico de CA seguro y cerrado
 - [ ] Conectar decisión QR del servidor Python al tópico del SG90
+- [ ] Recibir e integrar HX711 y celda de carga (componente requerido del proyecto)
 - [ ] Agregar fotos del circuito, esquema y evidencia de MQTT
 
 La cámara ESP32-S3 se alimenta por USB aparte y envía imágenes
