@@ -76,6 +76,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 ### Diagrama de conexiones y Tabla HAL
 
 - [Tabla HAL del hardware, pines, unidades y tópicos](hardware/tabla_hal.md)
+- [Guía paso a paso: montaje en protoboard de SafeDrop sin LED ni HX711](hardware/montaje_protoboard.md)
 - **Esquemático detallado del circuito** (Fritzing o equivalente): pendiente
   de realizar y subir como imagen.
 - **Fotografías de pruebas y carcasa:** pendientes de incorporar a `media/`.
