@@ -1,203 +1,119 @@
-# SafeDrop - ESP32 de control (Sprint 1)
+# SafeDrop — ESP32 de control
 
-**Proyecto:** SafeDrop - Buzon inteligente  
-**Equipo:** 09  
-**Integrantes:**
-- Alan Medina Rivas - 23240436
-- Victor Hugo Ojeda Cabrera - 23240390
+**Equipo:** 09 · **Materia:** Sistemas Programables · **Semestre:** ago-dic-2026
 
-**Materia:** Sistemas Programables - ISC TecNM Leon  
-**Semestre:** ago-dic-2026
+**Integrantes:** Alan Medina Rivas (23240436) y Victor Hugo Ojeda Cabrera (23240390).
 
-Este directorio documenta las pruebas progresivas del ESP32 estandar
-con MicroPython y Mosquitto. Son programas individuales de prueba,
-no todavia el firmware integrado del buzon.
+## Montaje integrado actual (sin HX711 ni LED)
 
-## Firmware integrado de laboratorio
+Ejecutar **solo** `safedrop_integrado.py` en la ESP32 estándar. El archivo
+`config.py` de Wi-Fi y Mosquitto se conserva privado y fuera de GitHub.
 
-[`safedrop_integrado.py`](safedrop_integrado.py) reúne en **un solo proceso**
-los sensores PIR (GPIO27), LDR (GPIO34), HC-SR04 (TRIG GPIO18 /
-ECHO GPIO19 mediante divisor), relé GPIO26, LED GPIO21 y buzzer GPIO25.
-Conserva los tópicos MQTT de las pruebas individuales y añade:
+El programa reúne **PIR, LDR, HC-SR04, relé, buzzer y servo SG90**.
+Los archivos individuales permanecen para pruebas históricas, salvo el
+archivo de prueba del LED, retirado a petición del equipo.
 
-- `safedrop/estado/rele` y `safedrop/estado/led`: ambos indican ON/OFF.
-  En modo `AUTO`, PIR + oscuridad activan el relé y el LED juntos.
-  Umbrales LDR iniciales: 3000 (oscuro) y 2500 (claro), con histéresis.
-- `safedrop/rele/cmd`: recibe `AUTO`, `ON` y `OFF`. El modo inicial es
-  `AUTO`; `ON` y `OFF` sirven para probar **el relé sin foco conectado**.
-- `safedrop/buzzer/cmd`: recibe `ON` (pitido breve) y `OFF`.
-- `safedrop/eventos/objeto`: publica `OBJETO_DETECTADO` o `ZONA_LIBRE`
-  según el HC-SR04. Cerca <= 15 cm y libre >= 20 cm, con dos lecturas
-  consecutivas. El buzzer pita al detectar un objeto nuevo.
-  **Detectar proximidad no significa validar una entrega.**
+| Dispositivo | Conexión con ESP32 | Alimentación |
+|---|---|---|
+| PIR HC-SR501 | OUT → GPIO27 | VCC 5 V, GND común; verificar que OUT sea 3.3 V máximo |
+| LDR LM393 | AO → GPIO34; DO libre | VCC 3V3, GND común |
+| HC-SR04 | TRIG → GPIO18; ECHO → divisor 5 V/3.3 V → GPIO19 | VCC 5 V, GND común |
+| Relé 2 canales (usar canal 1) | IN1 → GPIO26; IN2 libre | VCC 5 V, GND común; nivel activo bajo |
+| Buzzer activo 3.3 V | + → GPIO25; − → GND **solo si su consumo es compatible con GPIO** | Según especificación del buzzer |
+| Servo SG90 | Señal naranja → GPIO23; marrón → GND común | Cable rojo → 5 V con corriente suficiente, **no a GPIO ni a 3V3** |
 
-**Integración implementada en código; hace falta realizar la prueba conjunta
-con el cableado completo antes de declararla validada.**
-El **relé sí forma parte del firmware integrado**, pero sin foco de 120 V
-conectado. El SG90 permanece fuera de esta versión.
-No guardarlo aún como `main.py`. Mantener un `config.py` privado con SSID,
-contraseña e IP local del broker en la ESP32.
+Para HC-SR04 estándar, divisor recomendado: ECHO → resistencia de 1 kΩ →
+nodo GPIO19; desde ese nodo → resistencia de 2 kΩ → GND. Si ya
+hay un divisor comprobado, conservarlo.
 
-```cmd
-"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t "safedrop/#" -v
-```
+El SG90 y el módulo relé necesitan alimentación de 5 V adecuada. Una
+salida USB de 5 V/2 A con adaptador a terminales sirve como fuente de baja
+tensión de referencia, si el consumo conjunto y el adaptador lo permiten.
+El servo debe conectarse preferiblemente directo a la distribución de 5 V
+(no hacer circular sus picos por pistas delgadas de protoboard).
+Unir el **GND de esa fuente** con el **GND de ESP32**. **No unir**
+el +5 V externo con el pin 3V3 ni con otro +5 V sin plan de alimentación.
 
-El buzzer debe ser compatible en tensión **y corriente** con el GPIO o
-accionarse por transistor. No conectar ECHO 5 V directamente a la ESP32.
-El relé conserva la polaridad activa LOW de `rele_mqtt.py`
-(`RELE_ON = 0`, `RELE_OFF = 1`) y se apaga al salir del programa.
-Verificar la polaridad real y probar siempre sin foco de corriente doméstica.
+**La parte de 120/127 V del foco NO se cablea en protoboard.** Utilizar
+conjunto de tomacorriente con relé ya ensamblado en caja certificada,
+o hacer instalar por personal calificado el circuito de carga aislado.
+Mantenerlo físicamente separado de la ESP32 y los jumpers.
 
-Comandos manuales de diagnóstico del relé (modo automático por defecto):
+## Funcionamiento
 
-```cmd
-"C:\\Program Files\\mosquitto\\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m ON
-"C:\\Program Files\\mosquitto\\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m OFF
-"C:\\Program Files\\mosquitto\\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m AUTO
-```
+- PIR y LDR publican por MQTT. Con modo relé `AUTO` (por defecto),
+  movimiento + oscuridad encienden el relé; al dejar de cumplirse,
+  lo apagan. La lámpara conectada de forma segura a la salida aislada del
+  relé seguirá su estado.
+- HC-SR04 publica distancia. Cuando detecta una nueva aproximación,
+  publica `OBJETO_DETECTADO` y hace sonar brevemente el buzzer.
+  Esto **no valida** una entrega.
+- El SG90 recibe `ABRIR` y `CERRAR` por MQTT. Valores iniciales de
+  prueba: 90° y 0° respectivamente. Calibrar sin carga mecánica.
+- El buzzer recibe `ON` (un pitido breve) y `OFF`.
 
-## Avances comprobados
+**Estado:** firmware integrado en GitHub; falta verificar funcionamiento
+simultáneo en hardware, corriente de alimentación y movimientos seguros.
+La cámara ESP32-S3 se alimenta por separado y se comunica por Wi-Fi con
+el servidor Python; no se conecta físicamente a esta ESP32.
 
-| Modulo | Prueba realizada | Resultado |
-| --- | --- | --- |
-| MQTT / Mosquitto | Publicar y recibir `Hola SafeDrop` en Windows | Correcto |
-| ESP32 | MicroPython 1.28.0 y `umqtt.simple` | Correcto |
-| LED | Recibir `ON` y `OFF` desde CMD por MQTT | Mensajes procesados en Thonny |
-| Rele 5 V (dos canales) | Activar y desactivar canal por MQTT | Funcionamiento reportado por el equipo |
-| PIR HC-SR501 | Detectar movimiento con GPIO27 | Lecturas 1/0 en Thonny |
-| PIR + MQTT | Publicar cambios de movimiento | Publicaciones 1/0 reportadas desde Thonny |
-| LDR LM393 (cuatro pines) | Leer iluminacion por AO en GPIO34 | Lecturas 0-4095 cambiantes |
-| LDR + MQTT | Enviar lectura de luz al broker | Valores recibidos en CMD, confirmado por el equipo |
-| HC-SR04 + MQTT | Medir distancia (GPIO18 TRIG / GPIO19 ECHO) | Distancias recibidas en CMD, confirmado por el equipo |
-| Buzzer activo 3.3 V + MQTT | GPIO25, comandos ON/OFF | Sonido fisico y control por CMD confirmados por el equipo |
-| Servo SG90 | Movimiento fisico del servomotor | Funcionamiento fisico confirmado por el equipo; codigo de control MQTT incorporado |
+## Tópicos
 
-### Observaciones del LDR
+| Tópico | Sentido | Contenido |
+|---|---|---|
+| `safedrop/sensores/pir` | Publica | 0 / 1 |
+| `safedrop/sensores/ldr` | Publica | ADC 0–4095 |
+| `safedrop/sensores/distancia` | Publica | cm |
+| `safedrop/rele/cmd` | Recibe | AUTO / ON / OFF |
+| `safedrop/puerta/cmd` | Recibe | ABRIR / CERRAR |
+| `safedrop/buzzer/cmd` | Recibe | ON / OFF |
+| `safedrop/estado/rele` | Publica | 0 / 1 |
+| `safedrop/estado/puerta` | Publica | SIN_CALIBRAR / ABIERTA / CERRADA (posición ordenada) |
+| `safedrop/eventos/objeto` | Publica | OBJETO_DETECTADO / ZONA_LIBRE |
 
-En el modulo probado, **un valor mayor indica menos luz**.
-Se observaron lecturas aproximadas de 11-347 con luz intensa y
-3632-3639 al oscurecerlo. Es una orientacion experimental,
-no una calibracion definitiva. El umbral para activar iluminacion
-se determinara al integrar los sensores.
+La posición informada del SG90 es **ordenada**, no medida: no hay sensor
+de posición de la puerta.
 
-## Archivos y topicos
+## Prueba desde Windows CMD
 
-| Archivo | GPIO | Topico MQTT | Funcion |
-| --- | --- | --- | --- |
-| `led_mqtt.py` | 21 | `safedrop/led/cmd` | ON/OFF |
-| `rele_mqtt.py` | 26 | `safedrop/rele/cmd` | ON/OFF (comprobar polaridad del rele) |
-| `pir_mqtt.py` | 27 | `safedrop/sensores/pir` | Publica 1 (movimiento) / 0 |
-| `ldr_mqtt.py` | 34 (ADC1) | `safedrop/sensores/ldr` | Publica valor ADC cada 2 segundos |
-| `ultrasonico_mqtt.py` | 18 TRIG / 19 ECHO | `safedrop/sensores/distancia` | Publica distancia en cm cada 2 segundos |
-| `buzzer_mqtt.py` | 25 | `safedrop/buzzer/cmd` | Recibe ON/OFF |
-| `servo_mqtt.py` | 23 (PWM) | `safedrop/puerta/cmd` | Recibe ABRIR/CERRAR |
-| `config.example.py` | - | - | Plantilla Wi-Fi/IP del broker |
-
-### Conexiones de sensores ya probadas
-
-**PIR HC-SR501:** VCC a alimentacion compatible de 5 V,
-GND a GND, OUT a GPIO27. Verificar que OUT no exceda
-3.3 V antes de conectarlo a la ESP32.
-
-**LDR con LM393:** VCC a 3V3, GND a GND, AO a GPIO34
-y DO sin conectar.
-
-**HC-SR04:** VCC a 5 V, GND común, TRIG a GPIO18, ECHO a GPIO19
-por **divisor de tensión** que reduzca la salida de 5 V a un máximo de
-3.3 V. Lectura y publicación MQTT probadas.
-
-## Ejecutar pruebas
-
-1. Copiar `config.example.py` como `config.py` y poner las
-   credenciales Wi-Fi y la IP local de la computadora con Mosquitto.
-   **Nunca publicar `config.py`**.
-2. Colocar `config.py` y el script de prueba elegido en la ESP32,
-   y ejecutarlo manualmente con Thonny.
-3. No guardar los scripts de prueba como `main.py` automaticamente
-   antes de integrar las condiciones de seguridad.
-4. Abrir CMD para observar MQTT:
+Suscribirse a todo:
 
 ```cmd
 "C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t "safedrop/#" -v
 ```
 
-Control de LED:
-
-```cmd
-"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/led/cmd -m ON
-"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/led/cmd -m OFF
-```
-
-Control de rele:
-
-```cmd
-"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m ON
-"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m OFF
-```
-
-Suscripciones individuales:
-
-```cmd
-"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t safedrop/sensores/pir -v
-"C:\Program Files\mosquitto\mosquitto_sub.exe" -h localhost -t safedrop/sensores/ldr -v
-```
-
-Suscripcion especifica del sensor de distancia:
-
-```cmd
-"C:\\Program Files\\mosquitto\\mosquitto_sub.exe" -h localhost -t safedrop/sensores/distancia -v
-```
-
-## Control del buzzer
-
-Comandos MQTT para probar el buzzer:
-
-```cmd
-"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/buzzer/cmd -m ON
-"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/buzzer/cmd -m OFF
-```
-
-El buzzer activo de 3.3 V se probo en GPIO25. La conexion directa al
-GPIO solo es adecuada si su corriente es compatible con el limite del pin;
-verificar su consumo o usar un transistor si es necesario. Enviar OFF
-tras la prueba: ON deja al buzzer activado hasta recibir OFF.
-
-## Control del servomotor SG90
-
-El SG90 ya se movio correctamente en una prueba fisica del equipo. El
-archivo `servo_mqtt.py` incorpora la recepcion de comandos `ABRIR` y
-`CERRAR` para GPIO23; debe comprobarse la respuesta MQTT sobre la placa
-antes de usar el seguro mecanico del buzon.
+Abrir/cerrar el SG90, sin mecanismo acoplado al empezar:
 
 ```cmd
 "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/puerta/cmd -m ABRIR
 "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/puerta/cmd -m CERRAR
 ```
 
-Los angulos 0 y 90 grados son iniciales y necesitan calibrarse sin carga.
-La alimentacion del servo requiere corriente suficiente; un SG90 que se
-mueve a 3.3 V sin carga no garantiza funcionamiento bajo esfuerzo.
+Probar el relé sin carga de red y devolverlo a automático:
 
-## Seguridad del rele y foco
+```cmd
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m ON
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m OFF
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/rele/cmd -m AUTO
+```
 
-- El rele se ha probado por MQTT; **el foco de 120 V aun no esta
-  conectado ni validado como parte de SafeDrop**.
-- La instalacion de corriente domestica debe estar protegida
-  y verificada por personal calificado; nunca cablear 120 V
-  en una protoboard ni dejar conexiones expuestas.
-- Verificar alimentacion de 5 V, compatibilidad de la entrada
-  con control de 3.3 V y polaridad activa LOW/HIGH del modulo.
-- El broker de laboratorio no debe quedar expuesto sin autenticacion
-  a redes no confiables.
+Prueba del buzzer:
 
-## Pendiente para siguientes versiones
+```cmd
+"C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t safedrop/buzzer/cmd -m ON
+```
 
-- Verificar en conjunto la logica PIR + LDR + rele automatico (sin foco conectado).
-  El programa integrado ya la implementa en codigo.
-- Verificar en hardware la comunicacion MQTT de `servo_mqtt.py` y calibrar el mecanismo del SG90; ya publican PIR, LDR y HC-SR04 y responde el buzzer.
-- Integrar autorizacion QR desde Python y comandos MQTT al servo.
-- Implementar reconexion y estado seguro ante perdida de conexion.
-- Firebase, dashboard, carcasa, esquematicos y reporte final.
+## Consideraciones
 
-Cada prueba se conserva de forma independiente para documentar
-la evolucion del Sprint 1.
+- Probar primero los componentes a baja tensión, **sin foco de CA**.
+- El buzzer directamente al GPIO requiere corriente compatible con el pin;
+  de lo contrario se necesita etapa con transistor.
+- No conectar ECHO 5 V directamente a ESP32.
+- No alimentar el SG90 desde el regulador 3V3 del ESP32: que haya girado
+  sin carga a 3.3 V no significa que soporte el seguro del buzón.
+- El relé de la prueba individual es activo en LOW; comprobar que el canal
+  real coincide antes de alimentar la carga.
+- Mantener Mosquitto en red local confiable y proteger comandos de apertura
+  antes de la demostración final.
+- El código de detección QR en servidor deberá **validar** el código
+  antes de publicar `ABRIR`; leer un QR cualquiera no autoriza acceso.
