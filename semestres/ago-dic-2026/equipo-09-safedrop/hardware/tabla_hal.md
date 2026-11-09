@@ -18,6 +18,7 @@ comprobar su funcionamiento simultáneo.
 | 6 | Buzzer activo 3.3 V | Actuador aviso | GPIO25 | `safedrop/eventos/objeto` (evento del sistema) | `safedrop/buzzer/cmd` | Probado individualmente por MQTT |
 | 7 | Foco 120/127 V | Carga del relé, **fuera de protoboard** | Sin GPIO directo; se conmuta por relé | — | — | Circuito de carga aislado y protegido por instalar |
 | 8 | ESP32-S3 + OV3660 | Visión, MCU separado | No comparte GPIO con ESP32 de control | Captura RGB565 por TCP al servidor | — | Cámara y QR probados; puente MQTT por integrar |
+| 9 | Celda de carga + HX711 | Sensor requerido, pendiente de llegada | GPIO32 DT y GPIO33 SCK reservados (por confirmar) | Por definir al integrarlo | — | **Pendiente de llegada**, no descartado |
 
 **LED de pruebas retirado definitivamente.** El **HX711 y la celda de carga sí forman parte del diseño final de SafeDrop**, pero aún no llegan y por ello no aparecen en el montaje temporal. Se reservarán GPIO32 (DOUT/DT) y GPIO33 (SCK) para su incorporación posterior; verificar el cableado y compatibilidad cuando lleguen.
 
@@ -65,6 +66,7 @@ que confirme que la puerta alcanzó el ángulo ordenado.
 - [ ] Validar funcionamiento simultáneo del circuito completo
 - [ ] Verificar alimentación y torque del SG90 en la cerradura
 - [ ] Instalar foco a través de circuito eléctrico de CA seguro y cerrado
+- [ ] Conectar HX711 y celda de carga cuando llegue el módulo
 - [ ] Conectar decisión QR del servidor Python al tópico del SG90
 - [ ] Recibir e integrar HX711 y celda de carga (componente requerido del proyecto)
 - [ ] Agregar fotos del circuito, esquema y evidencia de MQTT
