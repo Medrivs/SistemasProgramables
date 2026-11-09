@@ -10,6 +10,9 @@ Ejecutar **solo** `safedrop_integrado.py` en la ESP32 estándar. El archivo
 `config.py` de Wi-Fi y Mosquitto se conserva privado y fuera de GitHub.
 
 El programa reúne **PIR, LDR, HC-SR04, relé, buzzer y servo SG90**.
+La **celda de carga + HX711 sigue siendo necesaria**, pero todavía no ha llegado.
+Se reservarán GPIO32 (DT/DOUT) y GPIO33 (SCK) para su integración posterior;
+verificar la serigrafía del módulo antes de conectarlo.
 El **HX711 con celda de carga es un componente requerido del sistema final**:
 aún no ha llegado y se agregará después de las pruebas del montaje actual.
 Reservar GPIO32 para DOUT/DT y GPIO33 para SCK; no conectarlos aún.
