@@ -4,12 +4,15 @@
 
 **Integrantes:** Alan Medina Rivas (23240436) y Victor Hugo Ojeda Cabrera (23240390).
 
-## Montaje integrado actual (sin HX711 ni LED)
+## Montaje integrado actual (sin LED; HX711 pendiente de recibir)
 
 Ejecutar **solo** `safedrop_integrado.py` en la ESP32 estándar. El archivo
 `config.py` de Wi-Fi y Mosquitto se conserva privado y fuera de GitHub.
 
 El programa reúne **PIR, LDR, HC-SR04, relé, buzzer y servo SG90**.
+El **HX711 con celda de carga es un componente requerido del sistema final**:
+aún no ha llegado y se agregará después de las pruebas del montaje actual.
+Reservar GPIO32 para DOUT/DT y GPIO33 para SCK; no conectarlos aún.
 Los archivos individuales permanecen para pruebas históricas, salvo el
 archivo de prueba del LED, retirado a petición del equipo.
 
