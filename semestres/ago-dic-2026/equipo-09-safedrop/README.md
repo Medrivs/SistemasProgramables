@@ -48,6 +48,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
 | `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
 | `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 en cm | Probado |
+| `safedrop/sensores/peso_raw` | ESP32 → Broker | Lecturas sin calibrar de celda de 5 kg por HX711 | Firmware preparado; prueba pendiente |
 | `safedrop/puerta/cmd` | Broker → ESP32 | Apertura/cierre SG90 con ABRIR/CERRAR | Firmware implementado; validación MQTT pendiente |
 | `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer activo ON/OFF | Probado |
 | `safedrop/estado/rele` | ESP32 → Broker | Estado ON/OFF del relé integrado | Integrado en código |
@@ -64,19 +65,19 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | 3 | PIR HC-SR501 | Sensor | 1 | Probado |
 | 4 | LDR LM393 | Sensor | 1 | Probado |
 | 5 | HC-SR04 | Sensor | 1 | Distancia y publicación MQTT probadas |
-| 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado |
-| 7 | Servomotor SG90 | Actuador | 1 | Movimiento físico confirmado; firmware MQTT incorporado |
+| 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado; foco probado de forma individual en caja protegida |
+| 7 | Servomotor SG90 | Actuador | 1 | Movimiento físico probado con fuente regulada; integración MQTT conjunta pendiente |
 | 8 | Buzzer activo 3.3 V | Actuador | 1 | MQTT probado individualmente |
-| 9 | Celda de carga + HX711 | Sensor requerido para medir peso | 1 conjunto previsto | Pendiente de recibir e integrar; GPIO32/33 reservados |
+| 9 | Celda de carga 5 kg + HX711 | Sensor no convencional | Kit recibido | Pendiente de soldadura si corresponde, cableado, prueba y calibración; GPIO32/33 |
 | 10 | Protoboard y cables | Montaje prototipo | Varios | Disponibles |
-| 11 | Foco 120/127 V | Iluminación controlada por relé | 1 | Control lógico integrado; instalación eléctrica protegida pendiente |
+| 11 | Foco 120/127 V | Iluminación controlada por relé | 1 | Prueba unitaria con relé en caja protegida, reportada por el equipo; integración simultánea pendiente |
 
 **Costo total real:** pendiente de registrar, sin estimaciones inventadas.
 
 ### Diagrama de conexiones y Tabla HAL
 
 - [Tabla HAL del hardware, pines, unidades y tópicos](hardware/tabla_hal.md)
-- [Guía paso a paso: montaje en protoboard de SafeDrop sin LED ni HX711](hardware/montaje_protoboard.md)
+- [Guía de montaje del circuito y el HX711 de 5 kg](hardware/montaje_protoboard.md)
 - **Esquemático detallado del circuito** (Fritzing o equivalente): pendiente
   de realizar y subir como imagen.
 - **Fotografías de pruebas y carcasa:** pendientes de incorporar a `media/`.
@@ -96,10 +97,12 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 - `ldr_mqtt.py`: nivel analógico por GPIO34 (ADC1).
 - `ultrasonico_mqtt.py`: distancia HC-SR04 en cm; TRIG GPIO18, ECHO GPIO19 con divisor de tensión.
 - `buzzer_mqtt.py`: buzzer activo 3.3 V, comandos MQTT ON/OFF en GPIO25.
-- `servo_mqtt.py`: prueba individual del SG90 por GPIO23 mediante comandos ABRIR/CERRAR.
+- `servo_mqtt.py`: control independiente del SG90 por GPIO23 mediante comandos ABRIR/CERRAR.
+- `hx711.py`: controlador MicroPython para celda de carga mediante HX711 (24 bits).
+- `hx711_prueba.py`: lectura y tara inicial para evaluar la celda de carga de 5 kg.
 - `config.example.py`: plantilla para la configuración privada.
 
-### Integración del ESP32 de control (sin LED; HX711 pendiente de llegar)
+### Integración del ESP32 de control y sensor no convencional HX711
 
 [`firmware/esp32-control/safedrop_integrado.py`](firmware/esp32-control/safedrop_integrado.py)
 reúne **PIR GPIO27, LDR GPIO34, HC-SR04 GPIO18/19, relé GPIO26,
@@ -110,10 +113,11 @@ para pruebas manuales. Un objeto cercano provoca un pitido breve.
 El SG90 recibe comandos `ABRIR` y `CERRAR` por MQTT.
 
 **Estado:** código integrado y publicado, **prueba simultánea pendiente**.
+La lectura de HX711 se activa en `safedrop_integrado.py` con `HX711_HABILITADO = True` después del montaje y la prueba independiente. Al inicio se publicarán cuentas sin calibrar en `safedrop/sensores/peso_raw`; no equivalen a gramos hasta realizar una calibración con una masa conocida.
 La parte de baja tensión del relé está incluida, pero la instalación del
 **foco de 120/127 V debe hacerse en caja cerrada y revisarse por personal
-calificado, nunca en la protoboard**. El programa no incorpora el LED de
-pruebas. El HX711 con celda de carga **sí es obligatorio en el diseño final**, pero se añadirá cuando llegue; no está conectado por ahora. Proximidad no equivale a entrega autorizada.
+calificado, nunca en la protoboard**. El equipo reporta que ya efectuó una prueba unitaria del relé con el foco dentro de una caja protegida.
+El HX711 y la celda de carga de **5 kg ya se recibieron**; se programó la lectura y resta verificar cableado, calibración e integración. Proximidad no equivale a entrega autorizada.
 
 Publica `safedrop/estado/rele`, `safedrop/estado/puerta` y
 `safedrop/eventos/objeto`. Instrucciones y precauciones en el
@@ -192,7 +196,7 @@ conexiones verificadas y pines/tópicos propuestos sin confundirlos.
 | Relé | 26 | `safedrop/rele/cmd` | Probado |
 | SG90 | 23 (PWM) | `safedrop/puerta/cmd` | Movimiento físico confirmado; validación MQTT pendiente |
 | Buzzer activo | 25 | `safedrop/buzzer/cmd` | Probado |
-| HX711 + celda de carga | 32 DOUT / 33 SCK (reservados) | Por definir | Componente necesario, pendiente de recibir |
+| HX711 + celda 5 kg | 32 DOUT / 33 SCK | `safedrop/sensores/peso_raw` | Kit recibido; firmware de lectura implementado; calibración pendiente |
 
 ## 🔥 Esquema Firebase (previsto, no implementado)
 
@@ -224,9 +228,9 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 | Sprint | Avances confirmados | Pendiente principal |
 |---|---|---|
-| 1 — Hardware, MQTT y HAL | Mosquitto, relé, buzzer, movimiento SG90 y **tres sensores MQTT**: PIR, LDR y HC-SR04; Tabla HAL | Probar firmware conjunto con SG90 y relé; evidencias y esquemático |
-| 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Publicar decisión por MQTT, controlar SG90 e IA exigida por la materia |
-| 3 — Firebase y carcasa | Arquitectura planeada | Firebase, dashboard, prototipo en carcasa |
+| 1 — Hardware, MQTT y HAL | Sprint 1 aprobado; PIR, LDR, HC-SR04, buzzer, pruebas unitarias del relé con foco y movimiento SG90, Tabla HAL | Verificar firmware conjunto con HX711, evidencias y esquemático |
+| 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Modelo real de IA solicitado por la maestra; integrar decisiones IA/QR por MQTT |
+| 3 — Firebase y carcasa | Arquitectura planeada; caja protegida del foco ya utilizada en prueba unitaria | Firebase, dashboard, carcasa completa del prototipo |
 | 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
 
 ## ⚠️ Retos técnicos encontrados
@@ -240,9 +244,10 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 4. La señal del LDR es inversa a la iluminación (valores altos = menos luz);
    necesita calibración para accionar la iluminación.
 5. El HC-SR04 alimentado a 5 V necesita adaptar ECHO a 3.3 V o menos antes de conectarlo al GPIO19.
-6. El control del relé de iluminación ya está en el firmware; el foco de
-   120/127 V requiere un circuito aislado en caja adecuada, instalado o
-   revisado profesionalmente y sin cables de red en protoboard.
+6. El relé y el foco se probaron de forma individual en caja protegida, según
+   lo reportado por el equipo. Para la instalación definitiva se requiere
+   mantener el aislamiento y verificar la seguridad del cableado de 120/127 V,
+   sin cables de red en protoboard.
 
 ---
 
