@@ -141,7 +141,8 @@ Comandos de prueba, uno por uno:
 ```
 
 Tras aproximadamente 30 segundos de estabilización del PIR, se
-publican lecturas de los 3 sensores. En modo AUTO, activar movimiento y
+publican lecturas de PIR, LDR y HC-SR04. Al habilitar el HX711 se
+publican también sus cuentas sin calibrar. En modo AUTO, activar movimiento y
 oscurecer el LDR debe activar el relé (sin foco conectado durante
 las pruebas eléctricas iniciales). Llevar objeto a menos de 15 cm
 del HC-SR04 desde una condición libre debe emitir un pitido.
