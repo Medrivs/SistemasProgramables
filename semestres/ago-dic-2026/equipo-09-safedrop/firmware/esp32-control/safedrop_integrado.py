@@ -10,11 +10,13 @@
 # Semestre:  ago-dic-2026
 # ============================================
 
-# Integracion del circuito de control, SIN LED ni HX711.
+# Integracion de PIR, LDR, HC-SR04, rele, buzzer y SG90.
+# HX711 disponible opcionalmente al terminar su prueba y montaje.
 # PIR + oscuridad -> rele (puede controlar una lampara desde un
 # circuito de CA cerrado, aislado y revisado profesionalmente).
 # HC-SR04 -> evento de proximidad + pitido de buzzer.
 # MQTT -> SG90 ABRIR/CERRAR, rele ON/OFF/AUTO y buzzer ON/OFF.
+# HX711: habilitar lectura de cuentas RAW al montar el nuevo sensor.
 # El QR aun se valida en el servidor; este programa solo recibe
 # comandos. No publicar ABRIR basandose unicamente en un QR leido.
 
@@ -23,6 +25,12 @@ import time
 from machine import Pin, PWM, ADC, time_pulse_us
 from umqtt.simple import MQTTClient
 from config import WIFI_SSID, WIFI_PASSWORD, BROKER_IP
+
+# Encender solo despues de conectar y verificar el HX711 en la placa.
+# Al habilitarlo, copiar tambien hx711.py a la ESP32.
+HX711_HABILITADO = False
+if HX711_HABILITADO:
+    from hx711 import HX711
 
 # GPIO del ESP32 de control, sin cambios respecto a pruebas previas.
 pir = Pin(27, Pin.IN)
@@ -36,6 +44,7 @@ RELE_ON = 0
 RELE_OFF = 1
 rele = Pin(26, Pin.OUT, value=RELE_OFF)
 buzzer = Pin(25, Pin.OUT, value=0)
+sensor_peso = HX711(dout=32, sck=33) if HX711_HABILITADO else None
 
 # Alimentar el SG90 con 5 V adecuados y GND compartida.
 # GPIO23 es solamente la SENAL PWM; no alimenta al motor.
@@ -44,6 +53,7 @@ servo = PWM(Pin(23), freq=50, duty_u16=0)
 TOPICO_PIR = b"safedrop/sensores/pir"
 TOPICO_LDR = b"safedrop/sensores/ldr"
 TOPICO_DISTANCIA = b"safedrop/sensores/distancia"
+TOPICO_PESO_RAW = b"safedrop/sensores/peso_raw"
 TOPICO_RELE_CMD = b"safedrop/rele/cmd"
 TOPICO_BUZZER_CMD = b"safedrop/buzzer/cmd"
 TOPICO_PUERTA_CMD = b"safedrop/puerta/cmd"
@@ -232,6 +242,14 @@ def iniciar():
                 else:
                     lecturas_cerca = 0
                     lecturas_libre = 0
+
+                if sensor_peso is not None:
+                    peso_raw = sensor_peso.leer(timeout_ms=400)
+                    if peso_raw is not None:
+                        publicar(cliente, TOPICO_PESO_RAW, peso_raw)
+                        print("HX711 cuentas RAW:", peso_raw)
+                    else:
+                        print("HX711 sin lectura; revisar cableado")
 
                 print("PIR:", estado_pir, "LDR:", nivel_ldr,
                       "Distancia:", distancia)
