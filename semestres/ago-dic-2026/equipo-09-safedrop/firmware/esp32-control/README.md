@@ -4,20 +4,18 @@
 
 **Integrantes:** Alan Medina Rivas (23240436) y Victor Hugo Ojeda Cabrera (23240390).
 
-## Montaje integrado actual (sin LED; HX711 pendiente de recibir)
+## Montaje integrado y celda de carga de 5 kg
 
 Ejecutar **solo** `safedrop_integrado.py` en la ESP32 estándar. El archivo
 `config.py` de Wi-Fi y Mosquitto se conserva privado y fuera de GitHub.
 
 El programa reúne **PIR, LDR, HC-SR04, relé, buzzer y servo SG90**.
-La **celda de carga + HX711 sigue siendo necesaria**, pero todavía no ha llegado.
-Se reservarán GPIO32 (DT/DOUT) y GPIO33 (SCK) para su integración posterior;
-verificar la serigrafía del módulo antes de conectarlo.
-El **HX711 con celda de carga es un componente requerido del sistema final**:
-aún no ha llegado y se agregará después de las pruebas del montaje actual.
-Reservar GPIO32 para DOUT/DT y GPIO33 para SCK; no conectarlos aún.
-Los archivos individuales permanecen para pruebas históricas, salvo el
-archivo de prueba del LED, retirado a petición del equipo.
+La **celda de carga de 5 kg + HX711 ya llegó**; es el **sensor no convencional** de SafeDrop.
+Se incorporaron los archivos `hx711.py` y `hx711_prueba.py` para leer el
+sensor en GPIO32 (DT/DOUT) y GPIO33 (SCK). El kit requiere revisar si hay
+que soldar los pines antes del montaje. La lectura todavía no se ha probado
+ni calibrado con una masa conocida.
+Los archivos individuales de los demás componentes siguen disponibles.
 
 | Dispositivo | Conexión con ESP32 | Alimentación |
 |---|---|---|
@@ -27,6 +25,7 @@ archivo de prueba del LED, retirado a petición del equipo.
 | Relé 2 canales (usar canal 1) | IN1 → GPIO26; IN2 libre | VCC 5 V, GND común; nivel activo bajo |
 | Buzzer activo 3.3 V | + → GPIO25; − → GND **solo si su consumo es compatible con GPIO** | Según especificación del buzzer |
 | Servo SG90 | Señal naranja → GPIO23; marrón → GND común | Cable rojo → 5 V con corriente suficiente, **no a GPIO ni a 3V3** |
+| HX711 + celda de carga 5 kg | DOUT/DT → GPIO32; SCK → GPIO33; GND común | VCC → 3V3 (modelo HX711 de 4 pines que admita 3.3 V). Sensor: rojo E+, negro E-, blanco A-, verde A+ |
 
 Para HC-SR04 estándar, divisor recomendado: ECHO → resistencia de 1 kΩ →
 nodo GPIO19; desde ese nodo → resistencia de 2 kΩ → GND. Si ya
@@ -44,6 +43,8 @@ el +5 V externo con el pin 3V3 ni con otro +5 V sin plan de alimentación.
 conjunto de tomacorriente con relé ya ensamblado en caja certificada,
 o hacer instalar por personal calificado el circuito de carga aislado.
 Mantenerlo físicamente separado de la ESP32 y los jumpers.
+El equipo confirmó una **prueba unitaria del relé con foco dentro de caja
+protectora**. Verificar el aislamiento y protección antes de su uso continuo.
 
 ## Funcionamiento
 
@@ -57,9 +58,14 @@ Mantenerlo físicamente separado de la ESP32 y los jumpers.
 - El SG90 recibe `ABRIR` y `CERRAR` por MQTT. Valores iniciales de
   prueba: 90° y 0° respectivamente. Calibrar sin carga mecánica.
 - El buzzer recibe `ON` (un pitido breve) y `OFF`.
+- El HX711 permite medir variaciones de carga. Para obtener gramos reales,
+  primero hay que efectuar tara y calibración con una masa conocida.
 
 **Estado:** firmware integrado en GitHub; falta verificar funcionamiento
 simultáneo en hardware, corriente de alimentación y movimientos seguros.
+La prueba unitaria del SG90 con alimentación regulada está confirmada por
+el equipo; la validación de apertura y cierre MQTT en el sistema conjunto
+continúa pendiente. La prueba del HX711 aún debe realizarse.
 La cámara ESP32-S3 se alimenta por separado y se comunica por Wi-Fi con
 el servidor Python; no se conecta físicamente a esta ESP32.
 
@@ -70,6 +76,7 @@ el servidor Python; no se conecta físicamente a esta ESP32.
 | `safedrop/sensores/pir` | Publica | 0 / 1 |
 | `safedrop/sensores/ldr` | Publica | ADC 0–4095 |
 | `safedrop/sensores/distancia` | Publica | cm |
+| `safedrop/sensores/peso_raw` | Publica | Cuentas del HX711 sin calibrar (al habilitarlo) |
 | `safedrop/rele/cmd` | Recibe | AUTO / ON / OFF |
 | `safedrop/puerta/cmd` | Recibe | ABRIR / CERRAR |
 | `safedrop/buzzer/cmd` | Recibe | ON / OFF |
@@ -79,6 +86,24 @@ el servidor Python; no se conecta físicamente a esta ESP32.
 
 La posición informada del SG90 es **ordenada**, no medida: no hay sensor
 de posición de la puerta.
+
+## Prueba del HX711 (nuevo sensor no convencional)
+
+1. Soldar los pines si llegaron sueltos. Apagar la ESP32 antes de cablear.
+2. HX711: `VCC → 3V3`, `GND → GND`, `DT/DOUT → GPIO32`, `SCK → GPIO33`.
+   Confirmar primero que el breakout tiene alimentación compatible con 3.3 V.
+3. Celda: **rojo → E+**, **negro → E-**, **blanco → A-** y
+   **verde → A+**, siguiendo el cableado entregado con el kit.
+4. Montar mecánicamente la barra de carga: un extremo fijo al soporte
+   y el otro sosteniendo la plataforma. No apoyar directamente la barra
+   completa sobre una superficie, ya que la deformación es la medición.
+5. Copiar a la ESP32 **ambos** `hx711.py` y `hx711_prueba.py`.
+   Ejecutar `hx711_prueba.py` con la plataforma vacía para hacer tara;
+   al colocar objetos deben cambiar las cuentas.
+6. Las lecturas RAW no son gramos. Calibrar con una masa conocida antes
+   de informar resultados de peso. En `safedrop_integrado.py`, después
+   de las pruebas independientes, cambiar `HX711_HABILITADO = False`
+   por `True` para publicar `safedrop/sensores/peso_raw` por MQTT.
 
 ## Prueba desde Windows CMD
 
@@ -111,7 +136,10 @@ Prueba del buzzer:
 
 ## Consideraciones
 
-- Probar primero los componentes a baja tensión, **sin foco de CA**.
+- Para ajustar cableado o el HX711, desconectar completamente la
+  alimentación y no manipular las conexiones de 127 V.
+- Las pruebas unitarias del relé y foco se reportaron con caja protectora;
+  esto no equivale a una revisión profesional del montaje final.
 - El buzzer directamente al GPIO requiere corriente compatible con el pin;
   de lo contrario se necesita etapa con transistor.
 - No conectar ECHO 5 V directamente a ESP32.
