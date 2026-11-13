@@ -144,7 +144,9 @@ Tras aproximadamente 30 segundos de estabilización del PIR, se
 publican lecturas de PIR, LDR y HC-SR04. Al habilitar el HX711 se
 publican también sus cuentas sin calibrar. En modo AUTO, activar movimiento y
 oscurecer el LDR debe activar el relé (sin foco conectado durante
-las pruebas eléctricas iniciales). Llevar objeto a menos de 15 cm
+las pruebas eléctricas iniciales). En modo AUTO, el relé debe permanecer
+encendido 30 segundos desde la última detección del PIR, excepto si vuelve
+la claridad. Llevar objeto a menos de 15 cm
 del HC-SR04 desde una condición libre debe emitir un pitido.
 
 **SG90:** verificar movimientos ABRIR/CERRAR sin varillaje ni bloqueo,
