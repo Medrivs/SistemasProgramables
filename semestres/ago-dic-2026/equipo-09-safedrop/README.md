@@ -80,7 +80,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 - [Guía de montaje del circuito y el HX711 de 5 kg](hardware/montaje_protoboard.md)
 - **Esquemático detallado del circuito** (Fritzing o equivalente): pendiente
   de realizar y subir como imagen.
-- **Fotografías de pruebas y carcasa:** pendientes de incorporar a `media/`.
+- **Fotografía real del montaje inicial:** disponible en [`media/circuito_safedrop.webp`](media/circuito_safedrop.webp); faltan imágenes del montaje final y la carcasa.
 
 Las conexiones marcadas como *propuestas* no se han validado.
 La parte de 120 V requiere instalación protegida y revisión de personal
@@ -219,8 +219,14 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 ## 🎥 Demostración y evidencias
 
+### Fotografía del montaje del prototipo
+
+![Fotografía real del montaje SafeDrop: ESP32, protoboard, sensores, relé y portalámparas](media/circuito_safedrop.webp)
+
+*Evidencia del montaje real en desarrollo. No representa una instalación eléctrica terminada ni segura para energizar: las conexiones de 120/127 V deben aislarse en una caja adecuada y ser revisadas por personal calificado antes de usar el foco.*
+
 - **Video de YouTube:** pendiente de grabar y publicar.
-- **Fotos del prototipo final:** pendientes.
+- **Fotos del prototipo final:** pendientes; la foto anterior corresponde al montaje de pruebas.
 - **Capturas de OpenCV y mensajes MQTT:** disponibles en pruebas, pendientes
   de incorporarse a la carpeta `media/`.
 - **Reporte final PDF:** pendiente de integrar en `docs/`.
