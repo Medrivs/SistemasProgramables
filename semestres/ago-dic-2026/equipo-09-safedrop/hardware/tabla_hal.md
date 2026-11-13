@@ -51,7 +51,9 @@ la inspección eléctrica del montaje definitivo sigue siendo necesaria.
 
 ## Comportamiento esperado del firmware integrado
 
-- PIR + LDR en modo AUTO → relé de iluminación.
+- PIR + LDR en modo AUTO → relé de iluminación. Se mantiene encendido
+  30 segundos desde el último movimiento mientras permanezca oscuro;
+  nueva detección reinicia el tiempo. Un retorno de luz lo apaga.
 - HC-SR04 cerca de objeto nuevo (≤15 cm tras 2 lecturas)
   → buzzer de 250 ms y evento MQTT.
 - Relé admite `AUTO`, `ON`, `OFF`.
