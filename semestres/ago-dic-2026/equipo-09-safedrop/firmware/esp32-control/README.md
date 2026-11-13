@@ -48,10 +48,12 @@ protectora**. Verificar el aislamiento y protección antes de su uso continuo.
 
 ## Funcionamiento
 
-- PIR y LDR publican por MQTT. Con modo relé `AUTO` (por defecto),
-  movimiento + oscuridad encienden el relé; al dejar de cumplirse,
-  lo apagan. La lámpara conectada de forma segura a la salida aislada del
-  relé seguirá su estado.
+- PIR y LDR publican por MQTT. En modo relé `AUTO` (por defecto),
+  movimiento + oscuridad encienden el relé y la iluminación permanece
+  encendida **30 segundos desde la última detección PIR**. Si vuelve la
+  claridad, se apaga antes. Una nueva detección reinicia el conteo.
+  El tiempo se cambia en `TIEMPO_FOCO_MS` dentro de `safedrop_integrado.py`.
+  La lámpara instalada de forma segura seguirá el estado del relé.
 - HC-SR04 publica distancia. Cuando detecta una nueva aproximación,
   publica `OBJETO_DETECTADO` y hace sonar brevemente el buzzer.
   Esto **no valida** una entrega.
