@@ -108,8 +108,9 @@ Pruebas independientes en [`firmware/esp32-control/`](firmware/esp32-control/):
 reúne **PIR GPIO27, LDR GPIO34, HC-SR04 GPIO18/19, relé GPIO26,
 buzzer GPIO25 y SG90 GPIO23** en un solo proceso de MicroPython.
 Publica los tres sensores por MQTT. Con movimiento y oscuridad en modo
-`AUTO`, acciona el relé de iluminación; admite además `ON` y `OFF`
-para pruebas manuales. Un objeto cercano provoca un pitido breve.
+`AUTO`, acciona el relé de iluminación durante **30 segundos desde la
+última detección PIR**; admite además `ON` y `OFF` para pruebas manuales.
+Si deja de estar oscuro, se apaga antes. Un objeto cercano provoca un pitido breve.
 El SG90 recibe comandos `ABRIR` y `CERRAR` por MQTT.
 
 **Estado:** código integrado y publicado, **prueba simultánea pendiente**.
