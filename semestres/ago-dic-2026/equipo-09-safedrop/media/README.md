@@ -1,18 +1,29 @@
 # SafeDrop — Evidencias del prototipo
 
-La maestra solicitó estas dos evidencias visuales para el avance del PR #6.
-**No sustituir las fotografías reales por simulaciones o imágenes generadas.**
+Esta carpeta contiene las evidencias reales del avance de SafeDrop
+para el PR #6. No sustituir fotografías reales por simulaciones.
 
-1. **circuito_safedrop.jpg** — fotografía clara del circuito real:
-   ESP32 de control, PIR, LDR, HC-SR04, relé, buzzer, SG90 y HX711
-   cuando esté instalado. Mantener el foco de 127 V dentro de su
-   caja protectora y no exponer conexiones de red eléctrica.
-2. **broker_mqtt.png** — captura de CMD ejecutando
-   `mosquitto_sub -h localhost -t "safedrop/#" -v`, con los tópicos
-   y lecturas reales del broker.
+## Fotografía del montaje actual
 
-Antes de subir fotos/capturas, verificar que no aparezcan claves,
-credenciales, SSID privados o información personal innecesaria.
+![Montaje real de SafeDrop](circuito_safedrop.webp)
 
-**Estado:** archivos de evidencia no recibidos aún. Esta guía
-no cuenta como sustituto de las evidencias exigidas por la maestra.
+- **Archivo:** `circuito_safedrop.webp`.
+- **Contenido:** foto del montaje de pruebas con ESP32 de control,
+  protoboard, sensores, módulo de relé, foco/portalámparas y SG90.
+- **Estado:** evidencia fotográfica inicial incorporada. La foto no
+  confirma que el circuito de corriente doméstica sea seguro.
+  Las conexiones de 120/127 V requieren aislamiento, caja apropiada
+  y revisión profesional antes de energizarse.
+
+## Evidencias que todavía faltan
+
+1. **broker_mqtt.png:** captura real de CMD ejecutando
+   `mosquitto_sub -h localhost -t "safedrop/#" -v`, mostrando
+   tópicos y lecturas publicados por la ESP32.
+2. **Foto del montaje definitivo:** componentes fijados y protegidos,
+   con el circuito de 120/127 V dentro de una caja adecuada.
+   Mostrar el HX711 y la celda de carga de 5 kg una vez instalados.
+3. **Evidencia de carcasa y operación final:** pendiente.
+
+Antes de subir capturas, verificar que no aparezcan contraseñas,
+credenciales, SSID privados ni información personal innecesaria.
