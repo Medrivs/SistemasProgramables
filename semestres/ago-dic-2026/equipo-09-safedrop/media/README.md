@@ -10,10 +10,6 @@ para el PR #6. No sustituir fotografías reales por simulaciones.
 - **Archivo:** `circuito_safedrop.webp`.
 - **Contenido:** foto del montaje de pruebas con ESP32 de control,
   protoboard, sensores, módulo de relé, foco/portalámparas y SG90.
-- **Estado:** evidencia fotográfica inicial incorporada. La foto no
-  confirma que el circuito de corriente doméstica sea seguro.
-  Las conexiones de 120/127 V requieren aislamiento, caja apropiada
-  y revisión profesional antes de energizarse.
 
 ## Evidencias que todavía faltan
 
