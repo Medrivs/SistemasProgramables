@@ -65,6 +65,9 @@ TOPICO_OBJETO = b"safedrop/eventos/objeto"
 OSCURO_ON = 3000
 OSCURO_OFF = 2500
 
+# Mantener la iluminacion 30 segundos desde la ultima deteccion PIR.
+TIEMPO_FOCO_MS = 30000
+
 # Umbrales iniciales de mesa; ajustar al instalar.
 OBJETO_CERCA_CM = 15
 OBJETO_LIBRE_CM = 20
@@ -181,6 +184,7 @@ def iniciar():
         print("MQTT conectado. SafeDrop integrado listo.")
         print("Relé AUTO / Buzzer listo / Servo ABRIR-CERRAR")
         estado_pir = pir.value()
+        ultima_deteccion_pir = time.ticks_ms() if estado_pir else None
         publicar(cliente, TOPICO_PIR, estado_pir)
         publicar(cliente, TOPICO_RELE_ESTADO, 0)
         publicar(cliente, TOPICO_PUERTA_ESTADO, estado_puerta)
@@ -197,6 +201,9 @@ def iniciar():
             ahora = time.ticks_ms()
 
             nuevo_pir = pir.value()
+            # Cada muestra de movimiento reinicia el tiempo de iluminacion.
+            if nuevo_pir:
+                ultima_deteccion_pir = ahora
             if nuevo_pir != estado_pir:
                 estado_pir = nuevo_pir
                 publicar(cliente, TOPICO_PIR, estado_pir)
@@ -254,13 +261,18 @@ def iniciar():
                 print("PIR:", estado_pir, "LDR:", nivel_ldr,
                       "Distancia:", distancia)
 
-            # Iluminacion del buzon: MQTT manual o modo automatico.
+            # Modo AUTO: mantener el foco tras un pulso breve del PIR.
+            # Si vuelve la claridad, apagar sin esperar el temporizador.
+            movimiento_reciente = (
+                ultima_deteccion_pir is not None
+                and time.ticks_diff(ahora, ultima_deteccion_pir) < TIEMPO_FOCO_MS
+            )
             if modo_rele == b"ON":
                 deseado = 1
             elif modo_rele == b"OFF":
                 deseado = 0
             else:
-                deseado = 1 if (estado_pir and oscuro) else 0
+                deseado = 1 if (movimiento_reciente and oscuro) else 0
 
             if deseado != estado_rele:
                 estado_rele = deseado
