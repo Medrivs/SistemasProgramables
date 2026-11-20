@@ -2,6 +2,7 @@
 import secrets
 import sqlite3
 import time
+from contextlib import closing
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
@@ -22,9 +23,12 @@ def crear_pase(minutos=30, db_path=DB_PATH, ahora=None):
         raise ValueError("La vigencia debe estar entre 1 y 1440 minutos")
     actual = int(time.time() if ahora is None else ahora)
     codigo = "SD-" + secrets.token_urlsafe(20)
-    with conectar_bd(db_path) as bd:
-        bd.execute("INSERT INTO pases(codigo, vence) VALUES (?, ?)",
-                   (codigo, actual + minutos * 60))
+    # sqlite3.Connection.__exit__ hace COMMIT, pero NO cierra la conexion.
+    # En Windows hay que cerrarla para que TemporaryDirectory borre el .sqlite3.
+    with closing(conectar_bd(db_path)) as bd:
+        with bd:
+            bd.execute("INSERT INTO pases(codigo, vence) VALUES (?, ?)",
+                       (codigo, actual + minutos * 60))
     return codigo, actual + minutos * 60
 
 def validar_y_consumir(codigo, db_path=DB_PATH, ahora=None):
