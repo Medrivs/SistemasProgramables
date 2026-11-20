@@ -87,8 +87,7 @@ revisado por personal calificado, o mediante conjunto de tomacorriente
 con relé preensamblado apto para red eléctrica. No llevar fase, neutro,
 contactos de potencia ni cables pelados de red a la protoboard.
 
-El equipo **ya reportó una prueba unitaria del relé con el foco** dentro
-de una caja de protección. Al modificar sensores y cables de la
+La demostracion se realizara con iluminacion de bajo voltaje. Al modificar sensores y cables de la
 protoboard, desconectar primero toda alimentación y no manipular
 la instalación de red. La prueba del programa conjunto debe confirmar
 el estado del relé antes de operar la iluminación; mantener el montaje
@@ -166,3 +165,16 @@ del servo, prueba y calibración del HX711, verificación del sistema de foco
 instalado en caja y autorización QR antes de abrir la puerta. Las pruebas
 unitarias de relé/foco y movimiento SG90 ya fueron reportadas; el sistema
 completo todavía requiere validación simultánea.
+
+## Version experimental integrada (20 noviembre 2026)
+
+El HX711 de 5 kg se conecta DOUT GPIO32 / SCK GPIO33; se reporto
+calibracion preliminar en 597 g. Se conserva la fijacion mecanica
+independiente y un espacio libre en el centro de la celda.
+
+La ESP32-S3 OV3660 permanece separada de la placa de control; ambas
+se conectan mediante Wi-Fi y broker Mosquitto. La camara publica URL
+HTTP del BMP a traves del topico `safedrop/camara/foto`.
+
+Para demostracion, cambiar a iluminacion de bajo voltaje y seguir el
+[aviso solicitado por la maestra](../media/README.md).

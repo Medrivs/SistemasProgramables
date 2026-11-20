@@ -34,11 +34,9 @@ e integrar.
 
 ![Arquitectura del prototipo SafeDrop](hardware/arquitectura.svg)
 
-**Implementado:** ESP32-S3 OV3660 → Wi-Fi/TCP → Python/OpenCV/pyzbar,
-y ESP32 de control ↔ MQTT/Mosquitto para sensores y actuadores de prueba.
+**Implementado y probado según el equipo:** ESP32-S3 OV3660 con web y MQTT; ESP32 de control con HX711, sensores y servo por MQTT. El servidor Python de validacion QR/HTTP se ha incorporado como codigo, pendiente de prueba integrada.
 
-**Planeado:** decisiones de validación QR → MQTT → SG90, integración de
-cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
+**Pendiente de verificar:** validacion QR con el servidor Python seguida de apertura MQTT; historico Firebase, dashboard, carcasa y modelo real de IA.
 
 ### Tópicos MQTT
 
@@ -48,13 +46,16 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | `safedrop/sensores/pir` | ESP32 → Broker | 0 / 1 movimiento | Probado |
 | `safedrop/sensores/ldr` | ESP32 → Broker | Valor ADC luz | Probado |
 | `safedrop/sensores/distancia` | ESP32 → Broker | Distancia HC-SR04 en cm | Probado |
-| `safedrop/sensores/peso_raw` | ESP32 → Broker | Lecturas sin calibrar de celda de 5 kg por HX711 | Firmware preparado; prueba pendiente |
-| `safedrop/puerta/cmd` | Broker → ESP32 | Apertura/cierre SG90 con ABRIR/CERRAR | Firmware implementado; validación MQTT pendiente |
+| `safedrop/sensores/peso_raw` | ESP32 → Broker | Cuentas HX711 | Integrado; funcionamiento reportado |
+| `safedrop/puerta/cmd` | Broker → ESP32 | SG90 ABRIR/CERRAR | Probado por MQTT |
 | `safedrop/buzzer/cmd` | Broker → ESP32 | Buzzer activo ON/OFF | Probado |
 | `safedrop/estado/rele` | ESP32 → Broker | Estado ON/OFF del relé integrado | Integrado en código |
 | `safedrop/eventos/objeto` | ESP32 → Broker | Detección de objeto por HC-SR04 | Integrado en código |
 | `safedrop/estado/puerta` | ESP32 → Broker | Posición ordenada al SG90 (ABIERTA/CERRADA) | Integrado en código |
-| `safedrop/cam/frame` | Cámara → Broker | Fotograma de cámara | Propuesto; hoy se usa TCP |
+| `safedrop/camara/cmd` | Broker → S3 | Solicitud FOTO | Probado según el equipo |
+| `safedrop/camara/foto` | S3 → Broker | URL BMP por HTTP | Probado según el equipo |
+| `safedrop/camara/estado` | S3 → Broker | Conexión de cámara | Implementado |
+| `safedrop/sensores/peso_g` | ESP32 → Broker | Peso en gramos | Calibración preliminar reportada |
 
 ## 🛠️ Hardware
 
@@ -65,12 +66,12 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 | 3 | PIR HC-SR501 | Sensor | 1 | Probado |
 | 4 | LDR LM393 | Sensor | 1 | Probado |
 | 5 | HC-SR04 | Sensor | 1 | Distancia y publicación MQTT probadas |
-| 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT probado; foco probado de forma individual en caja protegida |
-| 7 | Servomotor SG90 | Actuador | 1 | Movimiento físico probado con fuente regulada; integración MQTT conjunta pendiente |
+| 6 | Relé de 2 canales 5 V | Actuador | 1 | MQTT y modo AUTO reportados; iluminacion de demostracion de bajo voltaje pendiente |
+| 7 | Servomotor SG90 | Actuador | 1 | ABRIR/CERRAR por MQTT reportados |
 | 8 | Buzzer activo 3.3 V | Actuador | 1 | MQTT probado individualmente |
-| 9 | Celda de carga 5 kg + HX711 | Sensor no convencional | Kit recibido | Pendiente de soldadura si corresponde, cableado, prueba y calibración; GPIO32/33 |
+| 9 | Celda de carga 5 kg + HX711 | Sensor no convencional | Kit recibido | Prueba e integracion MQTT reportadas; calibracion provisional a 385.56 cuentas/g |
 | 10 | Protoboard y cables | Montaje prototipo | Varios | Disponibles |
-| 11 | Foco 120/127 V | Iluminación controlada por relé | 1 | Prueba unitaria con relé en caja protegida, reportada por el equipo; integración simultánea pendiente |
+| 11 | Iluminacion de demostracion | Carga de bajo voltaje (planeada) | Pendiente | Pendiente sustituir por iluminacion de bajo voltaje para demostracion |
 
 **Costo total real:** pendiente de registrar, sin estimaciones inventadas.
 
@@ -83,8 +84,7 @@ cámara por MQTT conforme al calendario, histórico Firebase y dashboard.
 - **Fotografía real del montaje inicial:** disponible en [`media/circuito_safedrop.webp`](media/circuito_safedrop.webp); faltan imágenes del montaje final y la carcasa.
 
 Las conexiones marcadas como *propuestas* no se han validado.
-La parte de 120 V requiere instalación protegida y revisión de personal
-calificado; no debe cablearse en protoboard.
+Aviso obligatorio de seguridad y evidencias: [media/README.md](media/README.md).
 
 ## 💻 Software y firmware
 
@@ -113,12 +113,9 @@ Publica los tres sensores por MQTT. Con movimiento y oscuridad en modo
 Si deja de estar oscuro, se apaga antes. Un objeto cercano provoca un pitido breve.
 El SG90 recibe comandos `ABRIR` y `CERRAR` por MQTT.
 
-**Estado:** código integrado y publicado, **prueba simultánea pendiente**.
+**Estado:** integración reportada del firmware con HX711 y servo MQTT; validar funcionamiento reproducible en la placa después de copiar los archivos de esta rama.
 La lectura de HX711 se activa en `safedrop_integrado.py` con `HX711_HABILITADO = True` después del montaje y la prueba independiente. Al inicio se publicarán cuentas sin calibrar en `safedrop/sensores/peso_raw`; no equivalen a gramos hasta realizar una calibración con una masa conocida.
-La parte de baja tensión del relé está incluida, pero la instalación del
-**foco de 120/127 V debe hacerse en caja cerrada y revisarse por personal
-calificado, nunca en la protoboard**. El equipo reporta que ya efectuó una prueba unitaria del relé con el foco dentro de una caja protegida.
-El HX711 y la celda de carga de **5 kg ya se recibieron**; se programó la lectura y resta verificar cableado, calibración e integración. Proximidad no equivale a entrega autorizada.
+El HX711 y la celda de carga de **5 kg** quedaron integrados por MQTT según las pruebas del equipo. Con masa de 597 g se reportaron 600.7 g; se requieren verificaciones con otras masas. Consulta el aviso de seguridad en [media/README.md](media/README.md). Proximidad no equivale a entrega autorizada.
 
 Publica `safedrop/estado/rele`, `safedrop/estado/puerta` y
 `safedrop/eventos/objeto`. Instrucciones y precauciones en el
@@ -127,16 +124,12 @@ Publica `safedrop/estado/rele`, `safedrop/estado/puerta` y
 ### Visión ESP32-S3
 
 [`firmware/esp32s3-vision/main.py`](firmware/esp32s3-vision/main.py):
-captura RGB565 a 160×120 y envía cabecera + imagen por TCP al servidor
-Python, puerto 5000. La configuración real va en `config.py`, ignorado
-por Git. La configuración separada aún requiere una prueba completa sobre
-la placa en su versión publicada.
+en la versión actual usa RGB565 a 320×240, MQTT (`FOTO`) y un servidor HTTP propio para entregar `ultima_foto.bmp`. La configuración privada va en `config.py`, ignorado por Git. El antiguo protocolo TCP queda documentado como legado.
 
 ### Servidor Python
 
-[`servidor/main.py`](servidor/main.py): recibe la imagen, la convierte
-con NumPy/OpenCV y utiliza `pyzbar` para leer QR. El reconocimiento
-de QR y la recepción de imágenes ya se demostraron en pruebas.
+`servidor/main.py` conserva el servidor TCP anterior.
+El nuevo [puente MQTT/HTTP](servidor/README.md) descarga el BMP de la ESP32-S3, lee QR con OpenCV/pyzbar y valida pases de un solo uso antes de publicar `ABRIR`. Esta nueva secuencia **requiere validación física de extremo a extremo**.
 
 Requisitos actuales: [`servidor/requirements.txt`](servidor/requirements.txt).
 
@@ -172,8 +165,7 @@ python main.py
 especial con soporte `camera` para ESP32-S3.
 
 **PC:** `opencv-python`, `numpy`, `pyzbar`; Mosquitto como broker.
-La integración `paho-mqtt` y `firebase-admin` se evaluará al implementar
-el puente MQTT y Firestore; no forman parte aún del servidor publicado.
+La integración `paho-mqtt` ya se utiliza en el puente de validación QR. `firebase-admin` y Firestore siguen pendientes.
 
 ## 🧠 Inteligencia artificial y visión
 
@@ -195,9 +187,9 @@ conexiones verificadas y pines/tópicos propuestos sin confundirlos.
 | LDR (AO) | 34 | `safedrop/sensores/ldr` | Probado |
 | HC-SR04 | 18 / 19 (ECHO con divisor) | `safedrop/sensores/distancia` | Probado |
 | Relé | 26 | `safedrop/rele/cmd` | Probado |
-| SG90 | 23 (PWM) | `safedrop/puerta/cmd` | Movimiento físico confirmado; validación MQTT pendiente |
+| SG90 | 23 (PWM) | `safedrop/puerta/cmd` | ABRIR/CERRAR por MQTT reportados |
 | Buzzer activo | 25 | `safedrop/buzzer/cmd` | Probado |
-| HX711 + celda 5 kg | 32 DOUT / 33 SCK | `safedrop/sensores/peso_raw` | Kit recibido; firmware de lectura implementado; calibración pendiente |
+| HX711 + celda 5 kg | 32 DOUT / 33 SCK | `safedrop/sensores/peso_raw`, `safedrop/sensores/peso_g` | Integración y calibración preliminar reportadas |
 
 ## 🔥 Esquema Firebase (previsto, no implementado)
 
@@ -223,7 +215,7 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 
 ![Fotografía real del montaje SafeDrop: ESP32, protoboard, sensores, relé y portalámparas](media/circuito_safedrop.webp)
 
-*Evidencia del montaje real en desarrollo. No representa una instalación eléctrica terminada ni segura para energizar: las conexiones de 120/127 V deben aislarse en una caja adecuada y ser revisadas por personal calificado antes de usar el foco.*
+*Evidencia inicial del prototipo, no del montaje final. Consultar las observaciones de seguridad en [media/README.md](media/README.md).*
 
 - **Video de YouTube:** pendiente de grabar y publicar.
 - **Fotos del prototipo final:** pendientes; la foto anterior corresponde al montaje de pruebas.
@@ -237,7 +229,7 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 |---|---|---|
 | 1 — Hardware, MQTT y HAL | Sprint 1 aprobado; PIR, LDR, HC-SR04, buzzer, pruebas unitarias del relé con foco y movimiento SG90, Tabla HAL | Verificar firmware conjunto con HX711, evidencias y esquemático |
 | 2 — Cámara e IA | Captura OV3660, servidor OpenCV, lectura QR | Modelo real de IA solicitado por la maestra; integrar decisiones IA/QR por MQTT |
-| 3 — Firebase y carcasa | Arquitectura planeada; caja protegida del foco ya utilizada en prueba unitaria | Firebase, dashboard, carcasa completa del prototipo |
+| 3 — Firebase y carcasa | Arquitectura planeada; montaje provisional fotografiado | Firebase, dashboard, carcasa completa del prototipo |
 | 4 — Reporte y video | Commits y documentación inicial | Reporte, fotos, video, entrega final |
 
 ## ⚠️ Retos técnicos encontrados
@@ -251,11 +243,13 @@ El proyecto Firebase, las reglas de seguridad y el dashboard están pendientes.
 4. La señal del LDR es inversa a la iluminación (valores altos = menos luz);
    necesita calibración para accionar la iluminación.
 5. El HC-SR04 alimentado a 5 V necesita adaptar ECHO a 3.3 V o menos antes de conectarlo al GPIO19.
-6. El relé y el foco se probaron de forma individual en caja protegida, según
-   lo reportado por el equipo. Para la instalación definitiva se requiere
-   mantener el aislamiento y verificar la seguridad del cableado de 120/127 V,
-   sin cables de red en protoboard.
+6. Falta ordenar el cableado y terminar el montaje en carcasa. Para las demostraciones, utilizar iluminacion de bajo voltaje y seguir el aviso de media/README.md.
 
 ---
 
 *Sistemas Programables · ISC TecNM León · ago-dic-2026 · Equipo 09*
+
+## Rama de desarrollo personal (20 noviembre 2026)
+
+Esta rama `safedrop-desarrollo` conserva los cambios sin actualizar el PR docente.
+Se integraron los archivos del HX711, la camara S3 MQTT/HTTP y el puente Python de validacion QR. La bibliografia del firmware original y las pruebas registradas por el equipo se conservan; la prueba fisica completa del nuevo puente esta pendiente. No almacenar credenciales, tokens ni capturas con datos sensibles en Git.

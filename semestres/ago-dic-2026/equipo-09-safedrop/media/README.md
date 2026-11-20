@@ -1,25 +1,29 @@
 # SafeDrop — Evidencias del prototipo
 
-Esta carpeta contiene las evidencias reales del avance de SafeDrop
-para el PR #6. No sustituir fotografías reales por simulaciones.
+Esta carpeta conserva las fotografias y capturas reales del montaje.
 
-## Fotografía del montaje actual
+## Aviso de seguridad solicitado por la maestra
 
-![Montaje real de SafeDrop](circuito_safedrop.webp)
+**La fotografia original muestra conductores de un foco de red domestica
+hacia el rele sobre la mesa. Esa parte debe permanecer desconectada de
+la corriente de pared. Para las pruebas, la demostracion y el video,
+usar iluminacion de bajo voltaje (por ejemplo una tira LED de 12 V)
+con fuente apropiada. Si se usa 127 V, debe estar en una caja cerrada,
+aislada y separada de la protoboard.**
 
-- **Archivo:** `circuito_safedrop.webp`.
-- **Contenido:** foto del montaje de pruebas con ESP32 de control,
-  protoboard, sensores, módulo de relé, foco/portalámparas y SG90.
+## Fotografia del montaje de pruebas
 
-## Evidencias que todavía faltan
+![Montaje real inicial de SafeDrop](circuito_safedrop.webp)
 
-1. **broker_mqtt.png:** captura real de CMD ejecutando
-   `mosquitto_sub -h localhost -t "safedrop/#" -v`, mostrando
-   tópicos y lecturas publicados por la ESP32.
-2. **Foto del montaje definitivo:** componentes fijados y protegidos,
-   con el circuito de 120/127 V dentro de una caja adecuada.
-   Mostrar el HX711 y la celda de carga de 5 kg una vez instalados.
-3. **Evidencia de carcasa y operación final:** pendiente.
+Este archivo documenta un prototipo inicial, no la carcasa final.
 
-Antes de subir capturas, verificar que no aparezcan contraseñas,
-credenciales, SSID privados ni información personal innecesaria.
+## Evidencias por agregar
+
+- `broker_mqtt.png`: captura real de `mosquitto_sub -h localhost -t "safedrop/#" -v`.
+- Fotografia de la celda HX711 instalada y calibrada.
+- Captura de la interfaz web de la camara ESP32-S3.
+- Foto de jumpers cortos identificados por color (rojo +, negro GND,
+  otros colores senal), cables agrupados y ESP32 visible.
+- Fotografias de la carcasa definitiva y de la demostracion completa.
+
+No subir contrasenas, codigos QR activos ni otros secretos al repositorio.

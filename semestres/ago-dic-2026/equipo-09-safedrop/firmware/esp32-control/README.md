@@ -39,12 +39,8 @@ El servo debe conectarse preferiblemente directo a la distribución de 5 V
 Unir el **GND de esa fuente** con el **GND de ESP32**. **No unir**
 el +5 V externo con el pin 3V3 ni con otro +5 V sin plan de alimentación.
 
-**La parte de 120/127 V del foco NO se cablea en protoboard.** Utilizar
-conjunto de tomacorriente con relé ya ensamblado en caja certificada,
-o hacer instalar por personal calificado el circuito de carga aislado.
-Mantenerlo físicamente separado de la ESP32 y los jumpers.
-El equipo confirmó una **prueba unitaria del relé con foco dentro de caja
-protectora**. Verificar el aislamiento y protección antes de su uso continuo.
+Para la demostracion de iluminacion se usara una carga de bajo voltaje; ver [media/README.md](../../media/README.md).
+Para la demostracion, seguir el aviso de seguridad en [media/README.md](../../media/README.md).
 
 ## Funcionamiento
 
@@ -67,7 +63,7 @@ protectora**. Verificar el aislamiento y protección antes de su uso continuo.
 simultáneo en hardware, corriente de alimentación y movimientos seguros.
 La prueba unitaria del SG90 con alimentación regulada está confirmada por
 el equipo; la validación de apertura y cierre MQTT en el sistema conjunto
-continúa pendiente. La prueba del HX711 aún debe realizarse.
+continúa pendiente. El HX711 reporta tara inicial y peso en gramos; validar nueva version en hardware.
 La cámara ESP32-S3 se alimenta por separado y se comunica por Wi-Fi con
 el servidor Python; no se conecta físicamente a esta ESP32.
 
@@ -153,3 +149,15 @@ Prueba del buzzer:
   antes de la demostración final.
 - El código de detección QR en servidor deberá **validar** el código
   antes de publicar `ABRIR`; leer un QR cualquiera no autoriza acceso.
+
+## Firmware actualizado: HX711 integrado
+
+El archivo `safedrop_integrado.py` activa `HX711_HABILITADO = True`.
+Usar **esta misma version** de `hx711.py`, compatible con
+`HX711(dout=32, pd_sck=33, gain=128)` y `sensor.read()`.
+Factor provisional: `385.56 cuentas/g`; la plataforma debe estar vacia
+al arrancar para la tara automatica. Si falla una lectura la rutina
+retorna `None` en vez de bloquear indefinidamente.
+Los topicos de peso son `safedrop/sensores/peso_raw` y
+`safedrop/sensores/peso_g`. Al recibir `ABRIR` se publica una solicitud
+`FOTO` en `safedrop/camara/cmd`.

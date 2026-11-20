@@ -13,14 +13,14 @@ comprobar su funcionamiento simultáneo.
 | 1 | PIR HC-SR501 | Sensor | GPIO27 (OUT) | `safedrop/sensores/pir` | — | Probado individualmente por MQTT |
 | 2 | LDR LM393 (AO) | Sensor | GPIO34 (ADC1) | `safedrop/sensores/ldr` | — | Probado individualmente por MQTT |
 | 3 | HC-SR04 | Sensor | GPIO18 TRIG / GPIO19 ECHO con divisor | `safedrop/sensores/distancia` | — | Probado individualmente por MQTT |
-| 4 | Relé 5 V 2 canales (canal 1) | Actuador iluminación | GPIO26 IN1 | `safedrop/estado/rele` | `safedrop/rele/cmd` | MQTT probado; prueba unitaria con foco en caja protegida reportada |
-| 5 | Servo SG90 | Actuador cerradura | GPIO23 PWM | `safedrop/estado/puerta` | `safedrop/puerta/cmd` | Movimiento físico con alimentación regulada probado; MQTT conjunto por verificar |
+| 4 | Relé 5 V 2 canales (canal 1) | Actuador iluminación | GPIO26 IN1 | `safedrop/estado/rele` | `safedrop/rele/cmd` | MQTT y modo AUTO reportados; iluminacion de bajo voltaje pendiente |
+| 5 | Servo SG90 | Actuador cerradura | GPIO23 PWM | `safedrop/estado/puerta` | `safedrop/puerta/cmd` | ABRIR/CERRAR mediante MQTT reportados |
 | 6 | Buzzer activo 3.3 V | Actuador aviso | GPIO25 | `safedrop/eventos/objeto` (evento del sistema) | `safedrop/buzzer/cmd` | Probado individualmente por MQTT |
-| 7 | Foco 120/127 V | Carga del relé, **fuera de protoboard** | Sin GPIO directo; se conmuta por relé | — | — | Prueba unitaria con caja protectora reportada; montaje final por revisar |
+| 7 | Iluminacion de demostracion | Carga del relé, **fuera de protoboard** | Sin GPIO directo; se conmuta por relé | — | — | Sustituir por carga de iluminacion de bajo voltaje |
 | 8 | ESP32-S3 + OV3660 | Visión, MCU separado | No comparte GPIO con ESP32 de control | Captura RGB565 por TCP al servidor | — | Cámara y QR probados; puente MQTT por integrar |
-| 9 | Celda de carga 5 kg + HX711 | **Sensor no convencional** | GPIO32 DT / GPIO33 SCK | `safedrop/sensores/peso_raw` (cuentas sin calibrar) | — | **Recibido**; driver y prueba añadidos, cableado/lectura/calibración pendientes |
+| 9 | Celda de carga 5 kg + HX711 | **Sensor no convencional** | GPIO32 DT / GPIO33 SCK | `safedrop/sensores/peso_raw` (cuentas sin calibrar) | — | **Recibido**; driver y prueba añadidos, prueba y calibracion preliminar reportadas |
 
-**Sensor no convencional confirmado:** celda de carga de 5 kg con módulo HX711, ya recibido. Terminales previstos: DOUT/DT GPIO32 y SCK GPIO33. Requiere confirmar soldaduras, instalación mecánica, lecturas reales y calibración.
+**Sensor no convencional confirmado:** celda de carga de 5 kg con modulo HX711. DOUT GPIO32 y SCK GPIO33; se reporto tara y calibracion preliminar por MQTT.
 
 ## Distribución de alimentación y señales
 
@@ -85,3 +85,11 @@ que confirme que la puerta alcanzó el ángulo ordenado.
 La cámara ESP32-S3 se alimenta por USB aparte y envía imágenes
 por Wi-Fi al servidor Python. Su flujo TCP de imágenes ya fue probado;
 el MQTT de autorización y Firebase siguen en desarrollo.
+
+## Actualizacion de integracion reportada
+
+- HX711: los topicos `safedrop/sensores/peso_raw` y `safedrop/sensores/peso_g` publican lecturas; factor provisional 385.56 cuentas/g.
+- Camara S3: `safedrop/camara/cmd` (FOTO), `safedrop/camara/estado` y `safedrop/camara/foto` (URL BMP).
+- Servo: `safedrop/puerta/cmd` (ABRIR/CERRAR) envia una solicitud de foto despues de abrir; **eso no constituye autorizacion previa**.
+- Puente Python: tiene validador QR previo a ABRIR, aun pendiente de prueba extremo a extremo.
+- Para la demostracion se usara iluminacion de bajo voltaje. Aviso en [media/README.md](../media/README.md).
