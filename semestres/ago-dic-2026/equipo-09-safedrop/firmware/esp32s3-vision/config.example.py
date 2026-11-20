@@ -1,16 +1,7 @@
-# ============================================
-# Proyecto:  SafeDrop
-# Archivo:   config.example.py
-# Objetivo:  Plantilla de configuracion privada Wi-Fi y servidor TCP para la camara.
-# Equipo:    09
-# Integrantes:
-#   Alan Medina Rivas - 23240436
-#   Victor Hugo Ojeda Cabrera - 23240390
-# Materia:   Sistemas Programables - ISC TecNM Leon
-# Semestre:  ago-dic-2026
-# ============================================
-
-WIFI_SSID = "TU_RED_WIFI"
-WIFI_PASSWORD = "TU_CONTRASEÑA"
-SERVER_IP = "192.168.1.100"
+# Copiar este archivo como config.py en la ESP32-S3. NO subir config.py a Git.
+WIFI_SSID = "TU_WIFI"
+WIFI_PASSWORD = "TU_PASSWORD"
+BROKER_IP = "192.168.1.100"  # IPv4 de la PC con Mosquitto
+# Solo para volver a ejecutar el firmware TCP antiguo si se necesita:
+SERVER_IP = BROKER_IP
 SERVER_PORT = 5000
