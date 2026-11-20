@@ -1,3 +1,5 @@
 opencv-python
 numpy
 pyzbar
+paho-mqtt>=2.0,<3.0
+qrcode[pil]

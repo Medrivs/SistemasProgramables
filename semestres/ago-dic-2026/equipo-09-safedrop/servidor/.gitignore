@@ -1,0 +1,10 @@
+# Credenciales y configuracion local (la raiz tambien ignora config.py)
+config.py
+.env
+.env.*
+# Pases QR y evidencias generadas localmente
+qr_autorizados*.sqlite3*
+qr_autorizado*.png
+ultima_foto.bmp
+vista_safedrop_corregida.jpg
+__pycache__/
